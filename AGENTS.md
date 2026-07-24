@@ -1,0 +1,1 @@
+# MANTIS POSTURE Project rules
