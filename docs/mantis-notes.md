@@ -72,6 +72,11 @@
 - **UI Identités** : Ajout des champs d'adresse dans le formulaire et l'affichage.
 - **UI Veille** : Migration sur SQLite via `listOsintModules`.
 
+### Étape 11 : Exécution des Modules OSINT (Simulation)
+- **Backend Rust** : Ajout de la commande `run_osint_module`. Elle met à jour `last_run`, et pour le module `osint-breaches`, elle simule la détection d'une fuite pour l'email `alex.martin.perso@example.com` en créant une entrée dans `exposures` et `timeline_entries`.
+- **Frontend API** : Ajout de `runOsintModule`.
+- **UI Veille** : Ajout d'un bouton "Lancer la routine" dans le panneau de détail. Affichage du résultat de l'exécution.
+
 ### Réflexion OSINT & Privacy (pour la suite)
 - **Adresses** : Permettra de croiser avec des annuaires publics, des fuites de bases immobilières, ou des registres de sociétés.
 - **Pseudos passés** : Important pour tracker l'évolution d'identité (ajouter un champ "ancien pseudo" ou gérer via les notes/relations).
@@ -81,4 +86,4 @@
 ### Prochaines étapes
 - [ ] Débloquer l'édition (CRUD) pour les dossiers.
 - [ ] Ajouter la création d'incidents/expositions depuis l'UI.
-- [ ] Implémenter le hashage local pour le module OSINT de fuite d'emails.
+- [ ] Intégrer une vraie API OSINT (ex: HIBP) en demandant la clé API à l'utilisateur.

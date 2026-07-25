@@ -653,6 +653,67 @@ fn update_rgpd_request_status(app: tauri::AppHandle, request_id: String, status_
     Ok(())
 }
 
+#[tauri::command]
+fn run_osint_module(app: tauri::AppHandle, module_id: String) -> Result<String, String> {
+    let conn = get_db_connection(&app)?;
+    
+    // Update last_run
+    conn.execute(
+        "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
+        params![module_id]
+    ).map_err(|e| e.to_string())?;
+
+    let mut summary = String::new();
+
+    if module_id == "osint-breaches" {
+        // Simulate checking emails
+        let mut stmt = conn.prepare("SELECT id, value FROM identities WHERE kind = 'email'").map_err(|e| e.to_string())?;
+        let email_iter = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        }).map_err(|e| e.to_string())?;
+
+        for email_res in email_iter {
+            let (_id, email) = email_res.map_err(|e| e.to_string())?;
+            
+            // Simulated logic: if it's our test email, we "find" a leak
+            if email == "alex.martin.perso@example.com" {
+                let exp_id = Uuid::new_v4().to_string();
+                conn.execute(
+                    "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), ?6, ?7, ?8, ?9)",
+                    params![
+                        exp_id,
+                        "Fuite simulée (Module OSINT)",
+                        "fuite",
+                        "modérée",
+                        "nouvelle",
+                        "Module OSINT local",
+                        "Une fuite a été détectée par le module de veille simulé.",
+                        "Détection automatique.",
+                        "folder-perso"
+                    ]
+                ).map_err(|e| e.to_string())?;
+                
+                // Add timeline entry
+                let tl_id = Uuid::new_v4().to_string();
+                conn.execute(
+                    "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, datetime('now'))",
+                    params![tl_id, "Détection OSINT", format!("Fuite simulée trouvée pour {}", email)]
+                ).map_err(|e| e.to_string())?;
+
+                summary.push_str(&format!("Fuite trouvée pour {}.\n", email));
+            }
+        }
+    } else {
+        summary.push_str("Module exécuté (simulation).\n");
+    }
+
+    if summary.is_empty() {
+        summary = "Aucune nouvelle exposition détectée.".to_string();
+    }
+
+    Ok(summary)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -675,7 +736,8 @@ pub fn run() {
             update_rgpd_request_status,
             create_identity,
             update_identity,
-            delete_identity
+            delete_identity,
+            run_osint_module
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

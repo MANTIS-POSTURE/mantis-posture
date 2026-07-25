@@ -72,7 +72,8 @@ Elle sert de guide pour les agents IA et les humains : on avance par blocs cohé
 
 - [x] Définir un cadre OSINT minimal (table `osint_modules`).
 - [x] Implémenter la vue Veille (`/veille`) sur SQLite.
-- [ ] Implémenter des modules de veille réels (fuites, mentions, domaines).
+- [x] Implémenter la commande Rust `run_osint_module` (simulation de détection créant une exposition).
+- [ ] Intégrer des APIs OSINT réelles (HIBP, holehe, etc.) via des clés API fournies par l'utilisateur.
 - [ ] Structurer le cycle OSINT (Planification → Diffusion).
 
 **Résultat attendu :**

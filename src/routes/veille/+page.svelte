@@ -4,11 +4,13 @@
   import '$lib/workflow.css';
   import GuideHeader from '$lib/GuideHeader.svelte';
   import NextStepBar from '$lib/NextStepBar.svelte';
-  import { listOsintModules, type OsintModule } from '$lib/api';
+  import { listOsintModules, runOsintModule, type OsintModule } from '$lib/api';
 
   let modules = $state<OsintModule[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  let running = $state(false);
+  let runResult = $state<string | null>(null);
 
   onMount(async () => {
     try {
@@ -39,6 +41,23 @@
       case 'planifie': return 'var(--mantis-warn)';
       case 'erreur': return 'var(--mantis-danger)';
       default: return 'var(--mantis-text-muted)';
+    }
+  }
+
+  async function executeModule() {
+    if (!selected) return;
+    running = true;
+    runResult = null;
+    error = null;
+    try {
+      const result = await runOsintModule(selected.id);
+      runResult = result;
+      // Refresh modules to update last_run
+      modules = await listOsintModules();
+    } catch (e) {
+      error = String(e);
+    } finally {
+      running = false;
     }
   }
 </script>
@@ -102,6 +121,24 @@
               <dt>Prochaine exécution</dt>
               <dd>{selected.next_run ?? 'Non planifiée'}</dd>
             </div>
+          </div>
+
+          <div class="actions-section">
+            <h4>Exécution manuelle</h4>
+            <div class="action-buttons">
+              <button class="wf-btn primary" onclick={executeModule} disabled={running}>
+                {running ? 'Exécution en cours...' : 'Lancer la routine maintenant'}
+              </button>
+            </div>
+            {#if runResult}
+              <div class="run-result">
+                <p class="run-title">Résultat de l'exécution :</p>
+                <pre>{runResult}</pre>
+              </div>
+            {/if}
+            <p class="muted" style="margin-top: 0.75rem;">
+              Note : En Phase 4, cette action interrogera de vraies APIs OSINT de manière sécurisée.
+            </p>
           </div>
 
           <NextStepBar
@@ -238,6 +275,48 @@
     margin: 0;
     font-size: 0.88rem;
     color: var(--mantis-text);
+  }
+
+  .actions-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--mantis-border);
+  }
+
+  .actions-section h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .run-result {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--mantis-border);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .run-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--mantis-text);
+  }
+
+  .run-result pre {
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    color: var(--mantis-text-muted);
   }
 
   .badge {

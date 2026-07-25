@@ -16,6 +16,27 @@ Dossier → Identité → Exposition → Incident → Action → (RGPD si besoin
 
 ---
 
+## OSINT Défensif & Posture Numérique
+
+MANTIS POSTURE intègre l'OSINT de manière défensive et centrée sur l'utilisateur, contrairement aux outils d'investigation classique.
+
+### Positionnement vs outils existants (HIBP, holehe, OSINTLeak, Seekr)
+
+- **Vs Seekr / Toolkits** : MANTIS n'est pas une boîte à outils OSINT générique. C'est un cockpit de pilotage. Les outils externes sont abstraits derrière des "Modules de veille" que l'utilisateur lance d'un clic.
+- **Vs HIBP / OSINTLeak** : MANTIS ne se contente pas d'afficher une liste de fuites. Il transforme la fuite en un **Incident** suivi, avec une **Action** de remédiation guidée (ex: "Changer le mot de passe de ce service").
+- **Confidentialité** : MANTIS est local-first. Les requêtes vers des APIs externes (si activées) doivent minimiser les données transmises (ex: hash SHA-1 de l'e-mail pour HIBP). Aucune donnée de l'utilisateur n'est envoyée à un serveur MANTIS.
+
+### Workflow OSINT dans MANTIS
+
+1. **Cible** : L'utilisateur configure ses Identités (e-mails, pseudos, domaines) dans les Dossiers.
+2. **Module** : L'utilisateur (ou une routine planifiée) lance un Module OSINT (ex: "Vérification fuites e-mails").
+3. **Signal** : Le module interroge une source (API, moteur de recherche) et remonte un résultat brut.
+4. **Exposition** : MANTIS filtre le signal. S'il est pertinent, il crée une entrée dans `exposures` (statut: `nouvelle`).
+5. **Incident** : Si l'exposition est grave (ex: fuite de mot de passe), MANTIS propose de créer un `incident`.
+6. **Action** : L'incident déclenche une action (ex: "Rotation des mots de passe", "Activation MFA").
+
+---
+
 ## Objectifs UX par vue
 
 ### Centre de posture (`/posture`)
@@ -209,3 +230,4 @@ Source unique : `src/lib/mock/posture.ts` — IDs croisés + guides, routines de
 - Collecte OSINT réelle (Phase 4).
 - Calcul Rust du score (Phase 5).
 - Génération PDF / envoi mail (Phases 6–7).
+```

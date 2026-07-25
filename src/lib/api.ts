@@ -195,3 +195,7 @@ export async function updateIdentity(
 export async function deleteIdentity(id: string): Promise<void> {
   await invoke('delete_identity', { id });
 }
+
+export async function runOsintModule(moduleId: string): Promise<string> {
+  return await invoke<string>('run_osint_module', { moduleId });
+}
