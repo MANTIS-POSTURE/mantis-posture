@@ -1,183 +1,62 @@
-use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 use rusqlite::Connection;
+use serde::Serialize;
+use tauri::Manager;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AppSettings {
-    pub key: String,
-    pub value: String,
+#[derive(Serialize)]
+struct Folder {
+    id: i64,
+    name: String,
+    description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Folder {
-    pub id: String,
-    pub name: String,
-    pub context: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Identity {
-    pub id: String,
-    pub label: String,
-    pub kind: String,
-    pub value: String,
-    pub folder_id: String,
-    pub notes: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Exposure {
-    pub id: String,
-    pub title: String,
-    pub kind: String,
-    pub severity: String,
-    pub status: String,
-    pub discovered_at: String,
-    pub source: String,
-    pub what: String,
-    pub why: String,
-    pub folder_id: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct IncidentCategory {
-    pub id: String,
-    pub name: String,
-    pub description: Option<String>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Incident {
-    pub id: String,
-    pub title: String,
-    pub severity: String,
-    pub discovered_at: String,
-    pub what: String,
-    pub why: String,
-    pub impact: String,
-    pub confidence: String,
-    pub next_step: String,
-    pub folder_id: String,
-    pub category_id: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActionMetadata {
-    pub id: String,
-    pub r#type: String, // type is a reserved keyword
-    pub value: String,
-    pub label: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Action {
-    pub id: String,
-    pub title: String,
-    pub priority_id: String,
-    pub difficulty_id: String,
-    pub deadline: String,
-    pub status: String,
-    pub guidance: String, // JSON array
-    pub proof_expected: String,
-    pub folder_id: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RgpdType {
-    pub id: String,
-    pub name: String,
-    pub label: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RgpdStatus {
-    pub id: String,
-    pub name: String,
-    pub label: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RgpdRequest {
-    pub id: String,
-    pub type_id: String,
-    pub target: String,
-    pub dpo_contact: String,
-    pub status_id: String,
-    pub data_summary: String,
-    pub draft_preview: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ExposureIncident {
-    pub exposure_id: String,
-    pub incident_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct IncidentAction {
-    pub incident_id: String,
-    pub action_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActionRgpd {
-    pub action_id: String,
-    pub rgpd_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct IncidentRgpd {
-    pub incident_id: String,
-    pub rgpd_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FolderIdentity {
-    pub folder_id: String,
-    pub identity_id: String,
-}
-
-// Database schema management
-pub fn initialize_database(conn: &Connection) -> Result<(), rusqlite::Error> {
-    // Create tables
-    conn.execute_batch(include_str!("../migrations/0001_init.sql"))?;
+#[tauri::command]
+fn list_folders(app: tauri::AppHandle) -> Result<Vec<Folder>, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
     
-    // Initialize default metadata if needed
+    let db_path = app_dir.join("mantis.db");
+    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+
     conn.execute(
-        "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
-        ("db_version", "1")
-    )?;
-    
-    Ok(())
-}
+        "CREATE TABLE IF NOT EXISTS folders (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
 
-// Connection management
-pub struct Database {
-    pub connection: Mutex<Connection>,
-}
-
-impl Database {
-    pub fn new(connection: Connection) -> Self {
-        Database {
-            connection: Mutex::new(connection),
-        }
+    // Insérer un dossier fictif si la table est vide
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if count == 0 {
+        conn.execute(
+            "INSERT INTO folders (name, description) VALUES (?1, ?2)",
+            ["Personnel", "Dossier personnel principal"]
+        ).map_err(|e| e.to_string())?;
     }
-    
-    // Add any common helper methods here
+
+    let mut stmt = conn.prepare("SELECT id, name, description FROM folders").map_err(|e| e.to_string())?;
+    let folder_iter = stmt.query_map([], |row| {
+        Ok(Folder {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            description: row.get(2)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut folders = Vec::new();
+    for folder in folder_iter {
+        folders.push(folder.map_err(|e| e.to_string())?);
+    }
+
+    Ok(folders)
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![list_folders])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
