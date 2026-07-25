@@ -2,9 +2,9 @@
   import { onMount } from 'svelte';
   import { listRgpdRequests, type RgpdRequest } from '$lib/api';
 
-  let requests: RgpdRequest[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let requests = $state<RgpdRequest[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {
@@ -17,49 +17,117 @@
   });
 
   function getStatusColor(status_id: string): string {
-    switch (status_id.toLowerCase()) {
-      case 'status_002': // prete
-        return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
-      case 'status_003': // envoyee
-        return 'bg-blue-900/50 text-blue-300 border-blue-700';
-      case 'status_004': // repondue
-        return 'bg-green-900/50 text-green-300 border-green-700';
-      default:
-        return 'bg-slate-700 text-slate-300 border-slate-600';
+    switch (status_id) {
+      case 'status_002': return 'var(--mantis-warn)';
+      case 'status_003': return 'var(--mantis-accent)';
+      case 'status_004': return 'var(--mantis-ok)';
+      default: return 'var(--mantis-text-muted)';
     }
   }
 </script>
 
-<div class="p-4 bg-slate-800 rounded-lg shadow-md text-slate-200">
-  <h2 class="text-xl font-bold mb-4 text-slate-100">Demandes RGPD</h2>
+<div class="glass-card">
+  <h2>Demandes RGPD</h2>
   
   {#if loading}
-    <p class="text-slate-400">Chargement...</p>
+    <p class="muted">Chargement...</p>
   {:else if error}
-    <p class="text-red-400">Erreur: {error}</p>
+    <p class="error">Erreur: {error}</p>
   {:else if requests.length === 0}
-    <p class="text-slate-400">Aucune demande RGPD enregistrée.</p>
+    <p class="muted">Aucune demande RGPD enregistrée.</p>
   {:else}
-    <div class="space-y-3">
+    <div class="list">
       {#each requests as req (req.id)}
-        <div class="border border-slate-700 rounded-md p-3 bg-slate-900/50">
-          <div class="flex justify-between items-start mb-2">
+        <a class="item" href={`/dpo?id=${req.id}`}>
+          <div class="item-header">
             <div>
-              <h3 class="text-md font-semibold text-slate-100">{req.target}</h3>
-              <p class="text-xs text-slate-500">Type: {req.type_id}</p>
+              <h3>{req.target}</h3>
+              <p class="sub">Type: {req.type_id}</p>
             </div>
-            <span class="px-2 py-1 text-xs rounded-full border {getStatusColor(req.status_id)}">
+            <span class="badge" style={`color: ${getStatusColor(req.status_id)}; border-color: ${getStatusColor(req.status_id)};`}>
               {req.status_id}
             </span>
           </div>
-          <div class="text-sm text-slate-400 mb-2">
-            <span class="font-medium text-slate-300">Contact DPO:</span> {req.dpo_contact}
+          <div class="contact">
+            <span class="label">Contact DPO:</span> {req.dpo_contact}
           </div>
           {#if req.data_summary}
-            <p class="text-sm text-slate-400 italic">"{req.data_summary}"</p>
+            <p class="summary">"{req.data_summary}"</p>
           {/if}
-        </div>
+        </a>
       {/each}
     </div>
   {/if}
 </div>
+
+<style>
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .item {
+    display: block;
+    padding: 1rem;
+    border: 1px solid var(--mantis-border);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s;
+  }
+
+  .item:hover {
+    border-color: var(--mantis-accent);
+  }
+
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .item-header h3 {
+    margin: 0 0 0.15rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .sub {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--mantis-text-muted);
+  }
+
+  .badge {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .contact {
+    font-size: 0.85rem;
+    color: var(--mantis-text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .label {
+    color: var(--mantis-text);
+    font-weight: 500;
+  }
+
+  .summary {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--mantis-text-muted);
+    font-style: italic;
+  }
+</style>

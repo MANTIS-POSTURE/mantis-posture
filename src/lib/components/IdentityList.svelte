@@ -2,9 +2,9 @@
   import { onMount } from 'svelte';
   import { listIdentities, type Identity } from '$lib/api';
 
-  let identities: Identity[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let identities = $state<Identity[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {
@@ -17,31 +17,31 @@
   });
 </script>
 
-<div class="p-4 bg-slate-800 rounded-lg shadow-md text-slate-200">
-  <h2 class="text-xl font-bold mb-4 text-slate-100">Identités</h2>
+<div class="glass-card">
+  <h2>Identités</h2>
   
   {#if loading}
-    <p class="text-slate-400">Chargement...</p>
+    <p class="muted">Chargement...</p>
   {:else if error}
-    <p class="text-red-400">Erreur: {error}</p>
+    <p class="error">Erreur: {error}</p>
   {:else if identities.length === 0}
-    <p class="text-slate-400">Aucune identité enregistrée.</p>
+    <p class="muted">Aucune identité enregistrée.</p>
   {:else}
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm text-left text-slate-300">
-        <thead class="text-xs uppercase bg-slate-700/50 text-slate-400">
+    <div class="table-container">
+      <table>
+        <thead>
           <tr>
-            <th class="px-4 py-3">Type</th>
-            <th class="px-4 py-3">Valeur</th>
-            <th class="px-4 py-3">Label</th>
+            <th>Type</th>
+            <th>Valeur</th>
+            <th>Label</th>
           </tr>
         </thead>
         <tbody>
           {#each identities as identity (identity.id)}
-            <tr class="border-b border-slate-700">
-              <td class="px-4 py-2 capitalize">{identity.kind}</td>
-              <td class="px-4 py-2 font-mono text-slate-100">{identity.value}</td>
-              <td class="px-4 py-2 text-slate-400">{identity.label || '-'}</td>
+            <tr>
+              <td class="capitalize">{identity.kind}</td>
+              <td class="mono">{identity.value}</td>
+              <td class="muted-text">{identity.label || '-'}</td>
             </tr>
           {/each}
         </tbody>
@@ -49,3 +49,42 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+  }
+
+  th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mantis-text-muted);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--mantis-border);
+  }
+
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--mantis-border);
+    color: var(--mantis-text);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .capitalize { text-transform: capitalize; }
+  .mono { font-family: 'JetBrains Mono', monospace; color: var(--mantis-text); }
+  .muted-text { color: var(--mantis-text-muted); }
+</style>
