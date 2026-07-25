@@ -1,13 +1,13 @@
 -- 0001_init.sql
 
 -- Application settings (for future use)
-CREATE TABLE app_settings (
+CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
 
 -- Folders - containers for organizing data
-CREATE TABLE folders (
+CREATE TABLE IF NOT EXISTS folders (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     context TEXT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE folders (
 );
 
 -- Identities - personal identifiers
-CREATE TABLE identities (
+CREATE TABLE IF NOT EXISTS identities (
     id TEXT PRIMARY KEY,
     label TEXT NOT NULL,
     kind TEXT NOT NULL CHECK(kind IN ('nom', 'email', 'telephone', 'pseudo', 'domaine', 'url')),
@@ -28,7 +28,7 @@ CREATE TABLE identities (
 );
 
 -- Exposures - public data traces
-CREATE TABLE exposures (
+CREATE TABLE IF NOT EXISTS exposures (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     kind TEXT NOT NULL CHECK(kind IN ('profil_public', 'fuite', 'annuaire', 'mention')),
@@ -44,7 +44,7 @@ CREATE TABLE exposures (
 );
 
 -- Incident categories for better classification
-CREATE TABLE incident_categories (
+CREATE TABLE IF NOT EXISTS incident_categories (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
@@ -52,7 +52,7 @@ CREATE TABLE incident_categories (
 );
 
 -- Incidents - exposures requiring action
-CREATE TABLE incidents (
+CREATE TABLE IF NOT EXISTS incidents (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     severity TEXT NOT NULL CHECK(severity IN ('faible', 'modérée', 'élevée', 'critique')),
@@ -69,7 +69,7 @@ CREATE TABLE incidents (
 );
 
 -- Action priorities and difficulties
-CREATE TABLE action_metadata (
+CREATE TABLE IF NOT EXISTS action_metadata (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL CHECK(type IN ('priority', 'difficulty')),
     value TEXT NOT NULL,
@@ -78,20 +78,22 @@ CREATE TABLE action_metadata (
 );
 
 -- Insert standard priorities
-INSERT OR IGNORE INTO action_metadata (id, type, value, label) VALUES
+INSERT INTO action_metadata (id, type, value, label) VALUES
 ('prio_001', 'priority', 'basse', 'Basse'),
 ('prio_002', 'priority', 'moyenne', 'Moyenne'),
 ('prio_003', 'priority', 'haute', 'Haute'),
-('prio_004', 'priority', 'critique', 'Critique');
+('prio_004', 'priority', 'critique', 'Critique')
+ON CONFLICT(id) DO NOTHING;
 
 -- Insert standard difficulties
-INSERT OR IGNORE INTO action_metadata (id, type, value, label) VALUES
+INSERT INTO action_metadata (id, type, value, label) VALUES
 ('diff_001', 'difficulty', 'facile', 'Facile'),
 ('diff_002', 'difficulty', 'moyenne', 'Moyenne'),
-('diff_003', 'difficulty', 'difficile', 'Difficile');
+('diff_003', 'difficulty', 'difficile', 'Difficile')
+ON CONFLICT(id) DO NOTHING;
 
 -- Actions - remediation steps
-CREATE TABLE actions (
+CREATE TABLE IF NOT EXISTS actions (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     priority_id TEXT NOT NULL REFERENCES action_metadata(id),
@@ -106,7 +108,7 @@ CREATE TABLE actions (
 );
 
 -- Types of RGPD requests
-CREATE TABLE rgpd_types (
+CREATE TABLE IF NOT EXISTS rgpd_types (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL CHECK(name IN ('acces', 'rectification', 'effacement', 'opposition', 'dereferencement')),
     label TEXT NOT NULL,
@@ -114,15 +116,16 @@ CREATE TABLE rgpd_types (
 );
 
 -- Insert RGPD request types
-INSERT OR IGNORE INTO rgpd_types (id, name, label) VALUES
+INSERT INTO rgpd_types (id, name, label) VALUES
 ('type_001', 'acces', 'Accès'),
 ('type_002', 'rectification', 'Rectification'),
 ('type_003', 'effacement', 'Effacement'),
 ('type_004', 'opposition', 'Opposition'),
-('type_005', 'dereferencement', 'Déréférencement');
+('type_005', 'dereferencement', 'Déréférencement')
+ON CONFLICT(id) DO NOTHING;
 
 -- RGPD request statuses
-CREATE TABLE rgpd_statuses (
+CREATE TABLE IF NOT EXISTS rgpd_statuses (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL CHECK(name IN ('brouillon', 'prete', 'envoyee', 'repondue')),
     label TEXT NOT NULL,
@@ -130,14 +133,15 @@ CREATE TABLE rgpd_statuses (
 );
 
 -- Insert RGPD statuses
-INSERT OR IGNORE INTO rgpd_statuses (id, name, label) VALUES
+INSERT INTO rgpd_statuses (id, name, label) VALUES
 ('status_001', 'brouillon', 'Brouillon'),
 ('status_002', 'prete', 'Prête à envoyer'),
 ('status_003', 'envoyee', 'Envoyée'),
-('status_004', 'repondue', 'Répondue');
+('status_004', 'repondue', 'Répondue')
+ON CONFLICT(id) DO NOTHING;
 
 -- Data protection requests (RGPD)
-CREATE TABLE rgpd_requests (
+CREATE TABLE IF NOT EXISTS rgpd_requests (
     id TEXT PRIMARY KEY,
     type_id TEXT NOT NULL REFERENCES rgpd_types(id),
     target TEXT NOT NULL,
@@ -150,7 +154,7 @@ CREATE TABLE rgpd_requests (
 );
 
 -- Timeline entries
-CREATE TABLE timeline_entries (
+CREATE TABLE IF NOT EXISTS timeline_entries (
     id TEXT PRIMARY KEY,
     event_type TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -158,39 +162,39 @@ CREATE TABLE timeline_entries (
 );
 
 -- Relationships between entities
-CREATE TABLE exposure_incident (
+CREATE TABLE IF NOT EXISTS exposure_incident (
     exposure_id TEXT REFERENCES exposures(id),
     incident_id TEXT REFERENCES incidents(id),
     PRIMARY KEY (exposure_id, incident_id)
 );
 
-CREATE TABLE incident_action (
+CREATE TABLE IF NOT EXISTS incident_action (
     incident_id TEXT REFERENCES incidents(id),
     action_id TEXT REFERENCES actions(id),
     PRIMARY KEY (incident_id, action_id)
 );
 
-CREATE TABLE action_rgpd (
+CREATE TABLE IF NOT EXISTS action_rgpd (
     action_id TEXT REFERENCES actions(id),
     rgpd_id TEXT REFERENCES rgpd_requests(id),
     PRIMARY KEY (action_id, rgpd_id)
 );
 
-CREATE TABLE incident_rgpd (
+CREATE TABLE IF NOT EXISTS incident_rgpd (
     incident_id TEXT REFERENCES incidents(id),
     rgpd_id TEXT REFERENCES rgpd_requests(id),
     PRIMARY KEY (incident_id, rgpd_id)
 );
 
-CREATE TABLE folder_identity (
+CREATE TABLE IF NOT EXISTS folder_identity (
     folder_id TEXT REFERENCES folders(id),
     identity_id TEXT REFERENCES identities(id),
     PRIMARY KEY (folder_id, identity_id)
 );
 
 -- Indexes
-CREATE INDEX idx_identities_folder ON identities(folder_id);
-CREATE INDEX idx_exposures_folder ON exposures(folder_id);
-CREATE INDEX idx_incidents_folder ON incidents(folder_id);
-CREATE INDEX idx_actions_folder ON actions(folder_id);
-CREATE INDEX idx_rgpd_requests ON rgpd_requests(status_id);
+CREATE INDEX IF NOT EXISTS idx_identities_folder ON identities(folder_id);
+CREATE INDEX IF NOT EXISTS idx_exposures_folder ON exposures(folder_id);
+CREATE INDEX IF NOT EXISTS idx_incidents_folder ON incidents(folder_id);
+CREATE INDEX IF NOT EXISTS idx_actions_folder ON actions(folder_id);
+CREATE INDEX IF NOT EXISTS idx_rgpd_requests ON rgpd_requests(status_id);
