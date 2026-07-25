@@ -103,6 +103,33 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     // Seed data if empty
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0)).map_err(|e| e.to_string())?;
     if count == 0 {
+        // Seed reference data
+        conn.execute_batch("
+            INSERT INTO action_metadata (id, type, value, label) VALUES
+            ('prio_001', 'priority', 'basse', 'Basse'),
+            ('prio_002', 'priority', 'moyenne', 'Moyenne'),
+            ('prio_003', 'priority', 'haute', 'Haute'),
+            ('prio_004', 'priority', 'critique', 'Critique');
+
+            INSERT INTO action_metadata (id, type, value, label) VALUES
+            ('diff_001', 'difficulty', 'facile', 'Facile'),
+            ('diff_002', 'difficulty', 'moyenne', 'Moyenne'),
+            ('diff_003', 'difficulty', 'difficile', 'Difficile');
+
+            INSERT INTO rgpd_types (id, name, label) VALUES
+            ('type_001', 'acces', 'Accès'),
+            ('type_002', 'rectification', 'Rectification'),
+            ('type_003', 'effacement', 'Effacement'),
+            ('type_004', 'opposition', 'Opposition'),
+            ('type_005', 'dereferencement', 'Déréférencement');
+
+            INSERT INTO rgpd_statuses (id, name, label) VALUES
+            ('status_001', 'brouillon', 'Brouillon'),
+            ('status_002', 'prete', 'Prête à envoyer'),
+            ('status_003', 'envoyee', 'Envoyée'),
+            ('status_004', 'repondue', 'Répondue');
+        ").map_err(|e| e.to_string())?;
+
         // Seed Folders
         conn.execute(
             "INSERT INTO folders (id, name, context) VALUES (?1, ?2, ?3)",

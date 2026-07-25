@@ -77,19 +77,6 @@ CREATE TABLE IF NOT EXISTS action_metadata (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Insert standard priorities
-INSERT OR IGNORE INTO action_metadata (id, type, value, label) VALUES
-('prio_001', 'priority', 'basse', 'Basse'),
-('prio_002', 'priority', 'moyenne', 'Moyenne'),
-('prio_003', 'priority', 'haute', 'Haute'),
-('prio_004', 'priority', 'critique', 'Critique');
-
--- Insert standard difficulties
-INSERT OR IGNORE INTO action_metadata (id, type, value, label) VALUES
-('diff_001', 'difficulty', 'facile', 'Facile'),
-('diff_002', 'difficulty', 'moyenne', 'Moyenne'),
-('diff_003', 'difficulty', 'difficile', 'Difficile');
-
 -- Actions - remediation steps
 CREATE TABLE IF NOT EXISTS actions (
     id TEXT PRIMARY KEY,
@@ -113,14 +100,6 @@ CREATE TABLE IF NOT EXISTS rgpd_types (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Insert RGPD request types
-INSERT OR IGNORE INTO rgpd_types (id, name, label) VALUES
-('type_001', 'acces', 'Accès'),
-('type_002', 'rectification', 'Rectification'),
-('type_003', 'effacement', 'Effacement'),
-('type_004', 'opposition', 'Opposition'),
-('type_005', 'dereferencement', 'Déréférencement');
-
 -- RGPD request statuses
 CREATE TABLE IF NOT EXISTS rgpd_statuses (
     id TEXT PRIMARY KEY,
@@ -128,13 +107,6 @@ CREATE TABLE IF NOT EXISTS rgpd_statuses (
     label TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
--- Insert RGPD statuses
-INSERT OR IGNORE INTO rgpd_statuses (id, name, label) VALUES
-('status_001', 'brouillon', 'Brouillon'),
-('status_002', 'prete', 'Prête à envoyer'),
-('status_003', 'envoyee', 'Envoyée'),
-('status_004', 'repondue', 'Répondue');
 
 -- Data protection requests (RGPD)
 CREATE TABLE IF NOT EXISTS rgpd_requests (
