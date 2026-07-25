@@ -19,7 +19,12 @@
     kind: 'email',
     value: '',
     folder_id: '' as string | null,
-    notes: ''
+    notes: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    postal_code: '',
+    country: ''
   });
 
   onMount(async () => {
@@ -47,7 +52,12 @@
         kind: selected.kind,
         value: selected.value,
         folder_id: selected.folder_id,
-        notes: selected.notes ?? ''
+        notes: selected.notes ?? '',
+        address_line1: selected.address_line1 ?? '',
+        address_line2: selected.address_line2 ?? '',
+        city: selected.city ?? '',
+        postal_code: selected.postal_code ?? '',
+        country: selected.country ?? ''
       };
     }
   });
@@ -70,7 +80,12 @@
       kind: 'email',
       value: '',
       folder_id: folders[0]?.id ?? null,
-      notes: ''
+      notes: '',
+      address_line1: '',
+      address_line2: '',
+      city: '',
+      postal_code: '',
+      country: ''
     };
   }
 
@@ -83,7 +98,12 @@
       kind: selected.kind,
       value: selected.value,
       folder_id: selected.folder_id,
-      notes: selected.notes ?? ''
+      notes: selected.notes ?? '',
+      address_line1: selected.address_line1 ?? '',
+      address_line2: selected.address_line2 ?? '',
+      city: selected.city ?? '',
+      postal_code: selected.postal_code ?? '',
+      country: selected.country ?? ''
     };
   }
 
@@ -96,20 +116,37 @@
         kind: selected.kind,
         value: selected.value,
         folder_id: selected.folder_id,
-        notes: selected.notes ?? ''
+        notes: selected.notes ?? '',
+        address_line1: selected.address_line1 ?? '',
+        address_line2: selected.address_line2 ?? '',
+        city: selected.city ?? '',
+        postal_code: selected.postal_code ?? '',
+        country: selected.country ?? ''
       };
     }
   }
 
   async function saveIdentity() {
     try {
+      const addr1 = formData.address_line1 || null;
+      const addr2 = formData.address_line2 || null;
+      const city = formData.city || null;
+      const postal = formData.postal_code || null;
+      const country = formData.country || null;
+      const notes = formData.notes || null;
+
       if (mode === 'create') {
         const newIdentity = await createIdentity(
           formData.label,
           formData.kind,
           formData.value,
           formData.folder_id || null,
-          formData.notes || null
+          notes,
+          addr1,
+          addr2,
+          city,
+          postal,
+          country
         );
         identities = [...identities, newIdentity];
         // Select the new identity
@@ -124,11 +161,26 @@
           formData.kind,
           formData.value,
           formData.folder_id || null,
-          formData.notes || null
+          notes,
+          addr1,
+          addr2,
+          city,
+          postal,
+          country
         );
         identities = identities.map(i => 
           i.id === formData.id 
-            ? { ...i, ...formData, folder_id: formData.folder_id || null, notes: formData.notes || null }
+            ? { 
+                ...i, 
+                ...formData, 
+                folder_id: formData.folder_id || null, 
+                notes: notes,
+                address_line1: addr1,
+                address_line2: addr2,
+                city: city,
+                postal_code: postal,
+                country: country
+              }
             : i
         );
         mode = 'view';
@@ -151,12 +203,22 @@
       error = String(e);
     }
   }
+
+  function formatAddress(identity: Identity): string {
+    const parts = [
+      identity.address_line1,
+      identity.address_line2,
+      identity.postal_code ? `${identity.postal_code} ${identity.city}` : identity.city,
+      identity.country
+    ].filter(p => p && p.trim() !== '');
+    return parts.join(', ');
+  }
 </script>
 
 <section class="wf-view">
   <GuideHeader
     title="Identités"
-    question="Quelles traces me concernent (noms, e-mails, profils) ?"
+    question="Quelles traces me concernent (noms, e-mails, profils, adresses) ?"
     intro="Inventaire de vos identifiants connus. Aucun mot de passe ni secret n’est stocké."
   />
 
@@ -197,8 +259,14 @@
               <dt>Dossier</dt>
               <dd>{getFolderName(selected.folder_id)}</dd>
             </div>
+            {#if selected.kind === 'adresse' && formatAddress(selected)}
+              <div class="field full-width">
+                <dt>Adresse complète</dt>
+                <dd>{formatAddress(selected)}</dd>
+              </div>
+            {/if}
             {#if selected.notes}
-              <div class="field">
+              <div class="field full-width">
                 <dt>Notes</dt>
                 <dd>{selected.notes}</dd>
               </div>
@@ -247,13 +315,40 @@
                 <option value="pseudo">Pseudo</option>
                 <option value="domaine">Domaine</option>
                 <option value="url">URL / Profil</option>
+                <option value="adresse">Adresse postale</option>
               </select>
             </div>
 
             <div class="form-field">
-              <label for="value">Valeur</label>
+              <label for="value">Valeur (résumé)</label>
               <input id="value" type="text" bind:value={formData.value} required />
+              <p class="muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Pour une adresse, indiquez par exemple "12 rue de Paris, 75001".</p>
             </div>
+
+            {#if formData.kind === 'adresse'}
+              <div class="form-grid">
+                <div class="form-field full-width">
+                  <label for="address_line1">Adresse ligne 1</label>
+                  <input id="address_line1" type="text" bind:value={formData.address_line1} />
+                </div>
+                <div class="form-field full-width">
+                  <label for="address_line2">Adresse ligne 2 (optionnel)</label>
+                  <input id="address_line2" type="text" bind:value={formData.address_line2} />
+                </div>
+                <div class="form-field">
+                  <label for="city">Ville</label>
+                  <input id="city" type="text" bind:value={formData.city} />
+                </div>
+                <div class="form-field">
+                  <label for="postal_code">Code postal</label>
+                  <input id="postal_code" type="text" bind:value={formData.postal_code} />
+                </div>
+                <div class="form-field full-width">
+                  <label for="country">Pays</label>
+                  <input id="country" type="text" bind:value={formData.country} />
+                </div>
+              </div>
+            {/if}
 
             <div class="form-field">
               <label for="folder_id">Dossier</label>
@@ -385,6 +480,10 @@
     gap: 1.25rem;
   }
 
+  .field.full-width {
+    grid-column: 1 / -1;
+  }
+
   @media (max-width: 700px) {
     .detail-grid {
       grid-template-columns: 1fr;
@@ -481,10 +580,20 @@
     gap: 1.25rem;
   }
 
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
   .form-field {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+  }
+
+  .form-field.full-width {
+    grid-column: 1 / -1;
   }
 
   .form-field label {

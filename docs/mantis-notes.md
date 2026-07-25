@@ -64,6 +64,21 @@
 - Refonte de l'UI `/identites` pour inclure un formulaire de création/édition dans le panneau de détail.
 - Gestion des modes "view" et "edit" dans la page Svelte.
 
+### Étape 10 : Adresses structurées & Modules OSINT
+- **Schéma SQL** : Ajout des champs `address_line1`, `address_line2`, `city`, `postal_code`, `country` à la table `identities`. Ajout du type 'adresse' au CHECK constraint.
+- **Schéma SQL** : Création de la table `osint_modules` pour définir les workflows de veille (fuites, mentions, etc.).
+- **Backend Rust** : Mise à jour des structs et commandes pour gérer les nouveaux champs d'adresse. Ajout de `list_osint_modules`. Bump du schema version à 2.
+- **Frontend API** : Mise à jour des types `Identity` et ajout de `OsintModule`.
+- **UI Identités** : Ajout des champs d'adresse dans le formulaire et l'affichage.
+- **UI Veille** : Migration sur SQLite via `listOsintModules`.
+
+### Réflexion OSINT & Privacy (pour la suite)
+- **Adresses** : Permettra de croiser avec des annuaires publics, des fuites de bases immobilières, ou des registres de sociétés.
+- **Pseudos passés** : Important pour tracker l'évolution d'identité (ajouter un champ "ancien pseudo" ou gérer via les notes/relations).
+- **Domaines** : Surveillance DNS, certificats TLS, sous-domaines exposés.
+- **Workflow fuite** : Hasher l'email localement (Rust) avant de requêter une API de breach intelligence (ex: HaveIBeenPwned) pour ne jamais envoyer l'email en clair.
+
 ### Prochaines étapes
 - [ ] Débloquer l'édition (CRUD) pour les dossiers.
 - [ ] Ajouter la création d'incidents/expositions depuis l'UI.
+- [ ] Implémenter le hashage local pour le module OSINT de fuite d'emails.

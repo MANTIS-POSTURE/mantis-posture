@@ -39,6 +39,11 @@ export interface Identity {
   value: string;
   folder_id: string | null;
   notes: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string | null;
 }
 
 export interface Exposure {
@@ -69,6 +74,17 @@ export interface TimelineEntry {
   event_type: string;
   description: string;
   created_at: string;
+}
+
+export interface OsintModule {
+  id: string;
+  name: string;
+  description: string;
+  target_kind: string;
+  frequency: string;
+  status: string;
+  last_run: string | null;
+  next_run: string | null;
 }
 
 export interface PostureScore {
@@ -106,6 +122,10 @@ export async function listTimelineEntries(): Promise<TimelineEntry[]> {
   return await invoke<TimelineEntry[]>('list_timeline_entries');
 }
 
+export async function listOsintModules(): Promise<OsintModule[]> {
+  return await invoke<OsintModule[]>('list_osint_modules');
+}
+
 export async function getPostureScore(): Promise<PostureScore> {
   return await invoke<PostureScore>('get_posture_score');
 }
@@ -118,12 +138,58 @@ export async function updateRgpdRequestStatus(id: string, statusId: string): Pro
   await invoke('update_rgpd_request_status', { requestId: id, statusId });
 }
 
-export async function createIdentity(label: string, kind: string, value: string, folderId: string | null, notes: string | null): Promise<Identity> {
-  return await invoke<Identity>('create_identity', { label, kind, value, folderId, notes });
+export async function createIdentity(
+  label: string, 
+  kind: string, 
+  value: string, 
+  folderId: string | null, 
+  notes: string | null,
+  addressLine1: string | null,
+  addressLine2: string | null,
+  city: string | null,
+  postalCode: string | null,
+  country: string | null
+): Promise<Identity> {
+  return await invoke<Identity>('create_identity', { 
+    label, 
+    kind, 
+    value, 
+    folderId, 
+    notes,
+    addressLine1,
+    addressLine2,
+    city,
+    postalCode,
+    country
+  });
 }
 
-export async function updateIdentity(id: string, label: string, kind: string, value: string, folderId: string | null, notes: string | null): Promise<void> {
-  await invoke('update_identity', { id, label, kind, value, folderId, notes });
+export async function updateIdentity(
+  id: string, 
+  label: string, 
+  kind: string, 
+  value: string, 
+  folderId: string | null, 
+  notes: string | null,
+  addressLine1: string | null,
+  addressLine2: string | null,
+  city: string | null,
+  postalCode: string | null,
+  country: string | null
+): Promise<void> {
+  await invoke('update_identity', { 
+    id, 
+    label, 
+    kind, 
+    value, 
+    folderId, 
+    notes,
+    addressLine1,
+    addressLine2,
+    city,
+    postalCode,
+    country
+  });
 }
 
 export async function deleteIdentity(id: string): Promise<void> {

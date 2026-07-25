@@ -19,10 +19,15 @@ CREATE TABLE IF NOT EXISTS folders (
 CREATE TABLE IF NOT EXISTS identities (
     id TEXT PRIMARY KEY,
     label TEXT NOT NULL,
-    kind TEXT NOT NULL CHECK(kind IN ('nom', 'email', 'telephone', 'pseudo', 'domaine', 'url')),
+    kind TEXT NOT NULL CHECK(kind IN ('nom', 'email', 'telephone', 'pseudo', 'domaine', 'url', 'adresse')),
     value TEXT NOT NULL,
     folder_id TEXT REFERENCES folders(id),
     notes TEXT,
+    address_line1 TEXT,
+    address_line2 TEXT,
+    city TEXT,
+    postal_code TEXT,
+    country TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -127,6 +132,20 @@ CREATE TABLE IF NOT EXISTS timeline_entries (
     event_type TEXT NOT NULL,
     description TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- OSINT Modules - definitions of surveillance routines
+CREATE TABLE IF NOT EXISTS osint_modules (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    target_kind TEXT NOT NULL, -- e.g., 'email', 'nom', 'adresse', 'domaine'
+    frequency TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('planifie', 'actif', 'erreur', 'desactive')),
+    last_run TEXT,
+    next_run TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Relationships between entities

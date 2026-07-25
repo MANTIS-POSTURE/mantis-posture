@@ -46,6 +46,11 @@ struct Identity {
     value: String,
     folder_id: Option<String>,
     notes: Option<String>,
+    address_line1: Option<String>,
+    address_line2: Option<String>,
+    city: Option<String>,
+    postal_code: Option<String>,
+    country: Option<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -89,6 +94,18 @@ struct PostureScore {
     completed_actions: i32,
 }
 
+#[derive(Serialize)]
+struct OsintModule {
+    id: String,
+    name: String,
+    description: String,
+    target_kind: String,
+    frequency: String,
+    status: String,
+    last_run: Option<String>,
+    next_run: Option<String>,
+}
+
 const MIGRATION_SQL: &str = include_str!("../migrations/0001_init.sql");
 
 fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
@@ -102,7 +119,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
     // Check schema version
     let user_version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0)).unwrap_or(0);
     
-    if user_version < 1 {
+    if user_version < 2 {
         // Drop all existing tables to ensure clean state for this migration
         conn.execute_batch("
             DROP TABLE IF EXISTS folder_identity;
@@ -111,6 +128,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
             DROP TABLE IF EXISTS incident_action;
             DROP TABLE IF EXISTS exposure_incident;
             DROP TABLE IF EXISTS timeline_entries;
+            DROP TABLE IF EXISTS osint_modules;
             DROP TABLE IF EXISTS rgpd_requests;
             DROP TABLE IF EXISTS rgpd_statuses;
             DROP TABLE IF EXISTS rgpd_types;
@@ -128,7 +146,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
         conn.execute_batch(MIGRATION_SQL).map_err(|e| e.to_string())?;
         
         // Update schema version
-        conn.execute("PRAGMA user_version = 1", []).map_err(|e| e.to_string())?;
+        conn.execute("PRAGMA user_version = 2", []).map_err(|e| e.to_string())?;
     }
 
     // Seed data if empty
@@ -183,6 +201,12 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
         conn.execute(
             "INSERT OR IGNORE INTO identities (id, label, kind, value, folder_id, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params!["id-email-pro", "E-mail professionnel", "email", "a.martin@entreprise-exemple.example", "folder-job", ""]
+        ).map_err(|e| e.to_string())?;
+        
+        // Seed Address Identity
+        conn.execute(
+            "INSERT OR IGNORE INTO identities (id, label, kind, value, folder_id, notes, address_line1, address_line2, city, postal_code, country) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params!["id-address-old", "Ancienne adresse", "adresse", "12 rue de l'Ancienne, 75001 Paris", "folder-perso", "Adresse conservée pour vérification de fuites", "12 rue de l'Ancienne", "", "Paris", "75001", "France"]
         ).map_err(|e| e.to_string())?;
 
         // Seed Exposures
@@ -239,6 +263,20 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
         conn.execute(
             "INSERT OR IGNORE INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, ?4)",
             params!["tl-2", "Action", "Création d'une action pour changer le mot de passe", "2023-10-15T12:05:00Z"]
+        ).map_err(|e| e.to_string())?;
+
+        // Seed OSINT Modules
+        conn.execute(
+            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params!["osint-breaches", "Vérification fuites (e-mails)", "Vérifie les e-mails du dossier Personnel dans les bases de fuites publiques.", "email", "Hebdomadaire", "planifie", null, "Phase 4"]
+        ).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params!["osint-search", "Mentions publiques (nom + pseudo)", "Recherche les mentions du nom et des pseudos sur les moteurs de recherche.", "nom", "Mensuelle", "planifie", null, "Phase 4"]
+        ).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params!["osint-address", "Exposition adresse (annuaires)", "Vérifie si les adresses connues apparaissent dans des annuaires publics.", "adresse", "Trimestrielle", "desactive", null, null]
         ).map_err(|e| e.to_string())?;
     }
 
@@ -338,7 +376,7 @@ fn list_actions(app: tauri::AppHandle) -> Result<Vec<Action>, String> {
 fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
     let conn = get_db_connection(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, label, kind, value, folder_id, notes FROM identities").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, label, kind, value, folder_id, notes, address_line1, address_line2, city, postal_code, country FROM identities").map_err(|e| e.to_string())?;
     let identity_iter = stmt.query_map([], |row| {
         Ok(Identity {
             id: row.get(0)?,
@@ -347,6 +385,11 @@ fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
             value: row.get(3)?,
             folder_id: row.get(4)?,
             notes: row.get(5)?,
+            address_line1: row.get(6)?,
+            address_line2: row.get(7)?,
+            city: row.get(8)?,
+            postal_code: row.get(9)?,
+            country: row.get(10)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -359,13 +402,25 @@ fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
 }
 
 #[tauri::command]
-fn create_identity(app: tauri::AppHandle, label: String, kind: String, value: String, folder_id: Option<String>, notes: Option<String>) -> Result<Identity, String> {
+fn create_identity(
+    app: tauri::AppHandle, 
+    label: String, 
+    kind: String, 
+    value: String, 
+    folder_id: Option<String>, 
+    notes: Option<String>,
+    address_line1: Option<String>,
+    address_line2: Option<String>,
+    city: Option<String>,
+    postal_code: Option<String>,
+    country: Option<String>
+) -> Result<Identity, String> {
     let conn = get_db_connection(&app)?;
     let id = Uuid::new_v4().to_string();
     
     conn.execute(
-        "INSERT INTO identities (id, label, kind, value, folder_id, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![id, label, kind, value, folder_id, notes]
+        "INSERT INTO identities (id, label, kind, value, folder_id, notes, address_line1, address_line2, city, postal_code, country) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        params![id, label, kind, value, folder_id, notes, address_line1, address_line2, city, postal_code, country]
     ).map_err(|e| e.to_string())?;
 
     Ok(Identity {
@@ -375,15 +430,33 @@ fn create_identity(app: tauri::AppHandle, label: String, kind: String, value: St
         value,
         folder_id,
         notes,
+        address_line1,
+        address_line2,
+        city,
+        postal_code,
+        country,
     })
 }
 
 #[tauri::command]
-fn update_identity(app: tauri::AppHandle, id: String, label: String, kind: String, value: String, folder_id: Option<String>, notes: Option<String>) -> Result<(), String> {
+fn update_identity(
+    app: tauri::AppHandle, 
+    id: String, 
+    label: String, 
+    kind: String, 
+    value: String, 
+    folder_id: Option<String>, 
+    notes: Option<String>,
+    address_line1: Option<String>,
+    address_line2: Option<String>,
+    city: Option<String>,
+    postal_code: Option<String>,
+    country: Option<String>
+) -> Result<(), String> {
     let conn = get_db_connection(&app)?;
     conn.execute(
-        "UPDATE identities SET label = ?1, kind = ?2, value = ?3, folder_id = ?4, notes = ?5, updated_at = datetime('now') WHERE id = ?6",
-        params![label, kind, value, folder_id, notes, id]
+        "UPDATE identities SET label = ?1, kind = ?2, value = ?3, folder_id = ?4, notes = ?5, address_line1 = ?6, address_line2 = ?7, city = ?8, postal_code = ?9, country = ?10, updated_at = datetime('now') WHERE id = ?11",
+        params![label, kind, value, folder_id, notes, address_line1, address_line2, city, postal_code, country, id]
     ).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -468,6 +541,32 @@ fn list_timeline_entries(app: tauri::AppHandle) -> Result<Vec<TimelineEntry>, St
     }
 
     Ok(entries)
+}
+
+#[tauri::command]
+fn list_osint_modules(app: tauri::AppHandle) -> Result<Vec<OsintModule>, String> {
+    let conn = get_db_connection(&app)?;
+    
+    let mut stmt = conn.prepare("SELECT id, name, description, target_kind, frequency, status, last_run, next_run FROM osint_modules").map_err(|e| e.to_string())?;
+    let module_iter = stmt.query_map([], |row| {
+        Ok(OsintModule {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            description: row.get(2)?,
+            target_kind: row.get(3)?,
+            frequency: row.get(4)?,
+            status: row.get(5)?,
+            last_run: row.get(6)?,
+            next_run: row.get(7)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut modules = Vec::new();
+    for module in module_iter {
+        modules.push(module.map_err(|e| e.to_string())?);
+    }
+
+    Ok(modules)
 }
 
 #[tauri::command]
@@ -570,6 +669,7 @@ pub fn run() {
             list_exposures,
             list_rgpd_requests,
             list_timeline_entries,
+            list_osint_modules,
             get_posture_score,
             update_action_status,
             update_rgpd_request_status,

@@ -38,16 +38,17 @@ Elle sert de guide pour les agents IA et les humains : on avance par blocs cohé
   - [x] Identités (`/identites`)
   - [x] DPO (`/dpo`)
 - [x] Persister les changements de statut des actions et demandes RGPD.
-- [ ] Débloquer l'édition des champs (CRUD complet).
-  - [x] Identités (Créer, Éditer)
-  - [ ] Dossiers
-  - [ ] Incidents / Expositions
+- [x] Débloquer l'édition des champs (CRUD complet).
+  - [x] Identités (Créer, Éditer, Supprimer)
+  - [x] Adresses (Champs structurés ajoutés aux identités)
+- [ ] Débloquer l'édition (CRUD) pour les dossiers.
+- [ ] Ajouter la création d'incidents/expositions depuis l'UI.
 
 **Résultat attendu :**
 - Une base locale cohérente.
 - Un cockpit qui manipule des données persistantes (fictives ou de test), avec un historique structuré.
 - Toutes les vues utilisent l'API SQLite réelle et le thème glassmorphism.
-- L'utilisateur peut ajouter et modifier ses propres identités.
+- L'utilisateur peut ajouter et modifier ses propres identités et adresses.
 
 ---
 
@@ -69,9 +70,10 @@ Elle sert de guide pour les agents IA et les humains : on avance par blocs cohé
 
 **Objectif :** remonter de façon structurée les traces et fuites publiques.
 
-- Définir un cadre OSINT minimal.
-- Implémenter des modules de veille (fuites, mentions, domaines).
-- Structurer le cycle OSINT (Planification → Diffusion).
+- [x] Définir un cadre OSINT minimal (table `osint_modules`).
+- [x] Implémenter la vue Veille (`/veille`) sur SQLite.
+- [ ] Implémenter des modules de veille réels (fuites, mentions, domaines).
+- [ ] Structurer le cycle OSINT (Planification → Diffusion).
 
 **Résultat attendu :**
 - Un flux régulier de signaux OSINT.
