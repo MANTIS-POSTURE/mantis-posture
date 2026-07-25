@@ -38,7 +38,12 @@
 - Lien vers l'incident associé.
 - Parsing du JSON `guidance` pour afficher les étapes numérotées.
 
+### Étape 6 : Migration des vues Dossiers et Identités
+- Branchement de `/dossiers` sur `listFolders`, `listIdentities`, `listExposures`, `listIncidents`.
+- Branchement de `/identites` sur `listIdentities`, `listFolders`, `listExposures`.
+- Application du design split-layout avec `glass-card`.
+- Filtrage des entités liées par `folder_id`.
+
 ### Prochaines étapes
-- [ ] Migrer `/dossiers` et `/identites` sur SQLite.
 - [ ] Migrer `/dpo` sur SQLite.
 - [ ] Débloquer l'édition (CRUD) pour les identités et dossiers.
