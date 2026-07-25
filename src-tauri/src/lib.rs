@@ -46,6 +46,24 @@ struct Exposure {
     detected_at: String,
 }
 
+#[derive(Serialize)]
+struct RgpdRequest {
+    id: i64,
+    target_entity: String,
+    request_type: String,
+    status: String,
+    created_at: String,
+    notes: Option<String>,
+}
+
+#[derive(Serialize)]
+struct TimelineEntry {
+    id: i64,
+    event_type: String,
+    description: String,
+    created_at: String,
+}
+
 fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
@@ -110,6 +128,28 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
         [],
     ).map_err(|e| e.to_string())?;
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS rgpd_requests (
+            id INTEGER PRIMARY KEY,
+            target_entity TEXT NOT NULL,
+            request_type TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            notes TEXT
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS timeline_entries (
+            id INTEGER PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
     // Seed data if empty
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0)).map_err(|e| e.to_string())?;
     if count == 0 {
@@ -153,6 +193,26 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
         conn.execute(
             "INSERT INTO exposures (identity_id, source, severity, description, detected_at) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![2, "Forum public", "Faible", "Pseudo lié à un profil sur un forum public.", "2024-01-20T08:30:00Z"]
+        ).map_err(|e| e.to_string())?;
+    }
+
+    let rgpd_count: i64 = conn.query_row("SELECT COUNT(*) FROM rgpd_requests", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if rgpd_count == 0 {
+        conn.execute(
+            "INSERT INTO rgpd_requests (target_entity, request_type, status, created_at, notes) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params!["Réseau Social X", "Effacement", "En cours", "2024-05-10T10:00:00Z", "Demande d'effacement de l'ancien profil."]
+        ).map_err(|e| e.to_string())?;
+    }
+
+    let timeline_count: i64 = conn.query_row("SELECT COUNT(*) FROM timeline_entries", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if timeline_count == 0 {
+        conn.execute(
+            "INSERT INTO timeline_entries (event_type, description, created_at) VALUES (?1, ?2, ?3)",
+            params!["Détection", "Fuite d'email détectée dans Collection #1", "2023-10-15T12:00:00Z"]
+        ).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT INTO timeline_entries (event_type, description, created_at) VALUES (?1, ?2, ?3)",
+            params!["Action", "Création d'une action pour changer le mot de passe", "2023-10-15T12:05:00Z"]
         ).map_err(|e| e.to_string())?;
     }
 
@@ -273,11 +333,65 @@ fn list_exposures(app: tauri::AppHandle) -> Result<Vec<Exposure>, String> {
     Ok(exposures)
 }
 
+#[tauri::command]
+fn list_rgpd_requests(app: tauri::AppHandle) -> Result<Vec<RgpdRequest>, String> {
+    let conn = init_database(&app)?;
+    
+    let mut stmt = conn.prepare("SELECT id, target_entity, request_type, status, created_at, notes FROM rgpd_requests").map_err(|e| e.to_string())?;
+    let rgpd_iter = stmt.query_map([], |row| {
+        Ok(RgpdRequest {
+            id: row.get(0)?,
+            target_entity: row.get(1)?,
+            request_type: row.get(2)?,
+            status: row.get(3)?,
+            created_at: row.get(4)?,
+            notes: row.get(5)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut requests = Vec::new();
+    for req in rgpd_iter {
+        requests.push(req.map_err(|e| e.to_string())?);
+    }
+
+    Ok(requests)
+}
+
+#[tauri::command]
+fn list_timeline_entries(app: tauri::AppHandle) -> Result<Vec<TimelineEntry>, String> {
+    let conn = init_database(&app)?;
+    
+    let mut stmt = conn.prepare("SELECT id, event_type, description, created_at FROM timeline_entries").map_err(|e| e.to_string())?;
+    let timeline_iter = stmt.query_map([], |row| {
+        Ok(TimelineEntry {
+            id: row.get(0)?,
+            event_type: row.get(1)?,
+            description: row.get(2)?,
+            created_at: row.get(3)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut entries = Vec::new();
+    for entry in timeline_iter {
+        entries.push(entry.map_err(|e| e.to_string())?);
+    }
+
+    Ok(entries)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![list_folders, list_incidents, list_actions, list_identities, list_exposures])
+        .invoke_handler(tauri::generate_handler![
+            list_folders, 
+            list_incidents, 
+            list_actions, 
+            list_identities, 
+            list_exposures,
+            list_rgpd_requests,
+            list_timeline_entries
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

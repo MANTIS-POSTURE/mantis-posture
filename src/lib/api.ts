@@ -39,6 +39,22 @@ export interface Exposure {
   detected_at: string;
 }
 
+export interface RgpdRequest {
+  id: number;
+  target_entity: string;
+  request_type: string;
+  status: string;
+  created_at: string;
+  notes: string | null;
+}
+
+export interface TimelineEntry {
+  id: number;
+  event_type: string;
+  description: string;
+  created_at: string;
+}
+
 export async function listFolders(): Promise<Folder[]> {
   return await invoke<Folder[]>('list_folders');
 }
@@ -57,4 +73,12 @@ export async function listIdentities(): Promise<Identity[]> {
 
 export async function listExposures(): Promise<Exposure[]> {
   return await invoke<Exposure[]>('list_exposures');
+}
+
+export async function listRgpdRequests(): Promise<RgpdRequest[]> {
+  return await invoke<RgpdRequest[]>('list_rgpd_requests');
+}
+
+export async function listTimelineEntries(): Promise<TimelineEntry[]> {
+  return await invoke<TimelineEntry[]>('list_timeline_entries');
 }
