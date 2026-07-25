@@ -19,33 +19,115 @@
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
   }
+
+  function getSeverityColor(sev: string): string {
+    switch (sev) {
+      case 'critique': return 'var(--mantis-danger)';
+      case 'élevée': return '#e67e22';
+      case 'modérée': return 'var(--mantis-warn)';
+      default: return 'var(--mantis-text-muted)';
+    }
+  }
 </script>
 
-<div class="p-4 bg-slate-800 rounded-lg shadow-md text-slate-200">
-  <h2 class="text-xl font-bold mb-4 text-slate-100">Expositions</h2>
+<div class="card">
+  <h2>Expositions</h2>
   
   {#if loading}
-    <p class="text-slate-400">Chargement...</p>
+    <p class="muted">Chargement...</p>
   {:else if error}
-    <p class="text-red-400">Erreur: {error}</p>
+    <p class="error">Erreur: {error}</p>
   {:else if exposures.length === 0}
-    <p class="text-slate-400">Aucune exposition enregistrée.</p>
+    <p class="muted">Aucune exposition enregistrée.</p>
   {:else}
-    <div class="space-y-3">
+    <div class="list">
       {#each exposures as exposure (exposure.id)}
-        <div class="border border-slate-700 rounded-md p-3 bg-slate-900/50">
-          <div class="flex justify-between items-start mb-2">
+        <a class="item" href={`/expositions?id=${exposure.id}`}>
+          <div class="item-header">
             <div>
-              <h3 class="text-md font-semibold text-slate-100">{exposure.title}</h3>
-              <p class="text-xs text-slate-500">Détecté le {formatDate(exposure.discovered_at)}</p>
+              <h3>{exposure.title}</h3>
+              <p class="date">Détecté le {formatDate(exposure.discovered_at)}</p>
             </div>
-            <span class="px-2 py-1 text-xs rounded-full bg-orange-900/50 text-orange-300 border border-orange-700">
+            <span class="badge" style={`color: ${getSeverityColor(exposure.severity)}; border-color: ${getSeverityColor(exposure.severity)};`}>
               {exposure.severity}
             </span>
           </div>
-          <p class="text-sm text-slate-400">{exposure.what}</p>
-        </div>
+          <p class="item-desc">{exposure.what}</p>
+        </a>
       {/each}
     </div>
   {/if}
 </div>
+
+<style>
+  .card {
+    background: var(--mantis-bg-raised);
+    border: 1px solid var(--mantis-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .item {
+    display: block;
+    padding: 1rem;
+    border: 1px solid var(--mantis-border);
+    border-radius: 8px;
+    background: var(--mantis-bg);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s;
+  }
+
+  .item:hover {
+    border-color: var(--mantis-accent);
+  }
+
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .item-header h3 {
+    margin: 0 0 0.15rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .date {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--mantis-text-muted);
+  }
+
+  .item-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--mantis-text-muted);
+  }
+
+  .badge {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+</style>

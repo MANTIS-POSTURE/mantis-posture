@@ -29,38 +29,102 @@
   function getEventColor(eventType: string): string {
     switch (eventType.toLowerCase()) {
       case 'détection':
-        return 'bg-orange-500';
+        return '#e67e22';
       case 'action':
-        return 'bg-blue-500';
+        return 'var(--mantis-accent)';
       case 'rgpd':
-        return 'bg-purple-500';
+        return 'var(--mantis-warn)';
       default:
-        return 'bg-slate-500';
+        return 'var(--mantis-text-muted)';
     }
   }
 </script>
 
-<div class="p-4 bg-slate-800 rounded-lg shadow-md text-slate-200">
-  <h2 class="text-xl font-bold mb-4 text-slate-100">Chronologie</h2>
+<div class="card">
+  <h2>Chronologie</h2>
   
   {#if loading}
-    <p class="text-slate-400">Chargement...</p>
+    <p class="muted">Chargement...</p>
   {:else if error}
-    <p class="text-red-400">Erreur: {error}</p>
+    <p class="error">Erreur: {error}</p>
   {:else if entries.length === 0}
-    <p class="text-slate-400">Aucun événement enregistré.</p>
+    <p class="muted">Aucun événement enregistré.</p>
   {:else}
-    <div class="relative border-l border-slate-700 pl-6 space-y-6">
+    <div class="timeline">
       {#each entries as entry (entry.id)}
-        <div class="relative">
-          <div class="absolute -left-[31px] top-1 w-3 h-3 rounded-full {getEventColor(entry.event_type)} ring-2 ring-slate-800"></div>
-          <div class="flex flex-col">
-            <span class="text-xs text-slate-500">{formatDate(entry.created_at)}</span>
-            <h3 class="text-sm font-semibold text-slate-200 mt-1">{entry.event_type}</h3>
-            <p class="text-sm text-slate-400 mt-1">{entry.description}</p>
+        <div class="entry">
+          <div class="dot" style={`background: ${getEventColor(entry.event_type)};`}></div>
+          <div class="content">
+            <span class="date">{formatDate(entry.created_at)}</span>
+            <h3>{entry.event_type}</h3>
+            <p>{entry.description}</p>
           </div>
         </div>
       {/each}
     </div>
   {/if}
 </div>
+
+<style>
+  .card {
+    background: var(--mantis-bg-raised);
+    border: 1px solid var(--mantis-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
+
+  .timeline {
+    position: relative;
+    border-left: 1px solid var(--mantis-border);
+    padding-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .entry {
+    position: relative;
+  }
+
+  .dot {
+    position: absolute;
+    left: -1.55rem;
+    top: 0.25rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--mantis-bg-raised);
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .date {
+    font-size: 0.75rem;
+    color: var(--mantis-text-muted);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--mantis-text-muted);
+  }
+</style>

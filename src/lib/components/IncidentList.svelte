@@ -21,43 +21,178 @@
   function getActionsForIncident(incidentId: string): Action[] {
     return actions.filter(a => a.incident_id === incidentId);
   }
+
+  function getSeverityColor(sev: string): string {
+    switch (sev) {
+      case 'critique': return 'var(--mantis-danger)';
+      case 'élevée': return '#e67e22';
+      case 'modérée': return 'var(--mantis-warn)';
+      default: return 'var(--mantis-text-muted)';
+    }
+  }
+
+  function getStatusLabel(status: string): string {
+    switch (status) {
+      case 'a_faire': return 'À faire';
+      case 'en_cours': return 'En cours';
+      case 'faite': return 'Faite';
+      default: return status;
+    }
+  }
 </script>
 
-<div class="p-4 bg-slate-800 rounded-lg shadow-md text-slate-200">
-  <h2 class="text-xl font-bold mb-4 text-slate-100">Incidents & Actions</h2>
+<div class="card">
+  <h2>Incidents & Actions</h2>
   
   {#if loading}
-    <p class="text-slate-400">Chargement...</p>
+    <p class="muted">Chargement...</p>
   {:else if error}
-    <p class="text-red-400">Erreur: {error}</p>
+    <p class="error">Erreur: {error}</p>
   {:else if incidents.length === 0}
-    <p class="text-slate-400">Aucun incident enregistré.</p>
+    <p class="muted">Aucun incident enregistré.</p>
   {:else}
-    <div class="space-y-4">
+    <div class="list">
       {#each incidents as incident (incident.id)}
-        <div class="border border-slate-700 rounded-md p-3 bg-slate-900/50">
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="text-lg font-semibold text-slate-100">{incident.title}</h3>
-            <span class="px-2 py-1 text-xs rounded-full bg-red-900/50 text-red-300 border border-red-700">
+        <a class="item" href={`/incidents?id=${incident.id}`}>
+          <div class="item-header">
+            <h3>{incident.title}</h3>
+            <span class="badge" style={`color: ${getSeverityColor(incident.severity)}; border-color: ${getSeverityColor(incident.severity)};`}>
               {incident.severity}
             </span>
           </div>
-          <p class="text-sm text-slate-400 mb-3">{incident.what}</p>
+          <p class="item-desc">{incident.what}</p>
           
-          <div class="mt-2">
-            <h4 class="text-sm font-medium text-slate-300 mb-1">Actions requises:</h4>
-            <ul class="space-y-1">
-              {#each getActionsForIncident(incident.id) as action (action.id)}
-                <li class="flex items-center text-sm text-slate-300">
-                  <span class="mr-2 text-slate-500">•</span>
-                  {action.title}
-                  <span class="ml-auto text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300">{action.status}</span>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        </div>
+          {#if getActionsForIncident(incident.id).length > 0}
+            <div class="actions-section">
+              <h4>Actions requises:</h4>
+              <ul>
+                {#each getActionsForIncident(incident.id) as action (action.id)}
+                  <li>
+                    <a href={`/actions?id=${action.id}`} class="action-link" onclick|stopPropagation>
+                      {action.title}
+                    </a>
+                    <span class="status-badge">{getStatusLabel(action.status)}</span>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+        </a>
       {/each}
     </div>
   {/if}
 </div>
+
+<style>
+  .card {
+    background: var(--mantis-bg-raised);
+    border: 1px solid var(--mantis-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .item {
+    display: block;
+    padding: 1rem;
+    border: 1px solid var(--mantis-border);
+    border-radius: 8px;
+    background: var(--mantis-bg);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s;
+  }
+
+  .item:hover {
+    border-color: var(--mantis-accent);
+  }
+
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .item-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .item-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--mantis-text-muted);
+  }
+
+  .badge {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .actions-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--mantis-border);
+  }
+
+  .actions-section h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--mantis-text);
+  }
+
+  .actions-section ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .actions-section li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .action-link {
+    color: var(--mantis-text);
+    text-decoration: none;
+  }
+
+  .action-link:hover {
+    text-decoration: underline;
+  }
+
+  .status-badge {
+    margin-left: auto;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    background: var(--mantis-bg-raised);
+    border: 1px solid var(--mantis-border);
+    color: var(--mantis-text-muted);
+  }
+</style>

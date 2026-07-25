@@ -17,38 +17,100 @@
   });
 
   function getScoreColor(score: number): string {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 50) return 'text-yellow-400';
-    return 'text-red-400';
+    if (score >= 80) return 'var(--mantis-ok)';
+    if (score >= 50) return 'var(--mantis-warn)';
+    return 'var(--mantis-danger)';
   }
 </script>
 
-<div class="p-4 bg-slate-800 rounded-lg shadow-md text-slate-200">
-  <h2 class="text-xl font-bold mb-4 text-slate-100">Score de posture</h2>
+<div class="card">
+  <h2>Score de posture</h2>
   
   {#if loading}
-    <p class="text-slate-400">Calcul du score...</p>
+    <p class="muted">Calcul du score...</p>
   {:else if error}
-    <p class="text-red-400">Erreur: {error}</p>
+    <p class="error">Erreur: {error}</p>
   {:else if scoreData}
-    <div class="flex flex-col items-center">
-      <div class={`text-5xl font-bold ${getScoreColor(scoreData.score)}`}>
+    <div class="score-container">
+      <div class="score-main" style={`color: ${getScoreColor(scoreData.score)}`}>
         {scoreData.score}
       </div>
-      <div class="mt-4 w-full space-y-2 text-sm">
-        <div class="flex justify-between bg-slate-900/50 p-2 rounded">
-          <span class="text-slate-400">Incidents ouverts</span>
-          <span class="font-semibold text-red-300">{scoreData.open_incidents}</span>
+      <div class="metrics-grid">
+        <div class="metric">
+          <span class="metric-value" style="color: var(--mantis-danger);">{scoreData.open_incidents}</span>
+          <span class="metric-label">Incidents ouverts</span>
         </div>
-        <div class="flex justify-between bg-slate-900/50 p-2 rounded">
-          <span class="text-slate-400">Expositions élevées</span>
-          <span class="font-semibold text-orange-300">{scoreData.high_exposures}</span>
+        <div class="metric">
+          <span class="metric-value" style="color: #e67e22;">{scoreData.high_exposures}</span>
+          <span class="metric-label">Expositions élevées</span>
         </div>
-        <div class="flex justify-between bg-slate-900/50 p-2 rounded">
-          <span class="text-slate-400">Actions terminées</span>
-          <span class="font-semibold text-green-300">{scoreData.completed_actions}</span>
+        <div class="metric">
+          <span class="metric-value" style="color: var(--mantis-ok);">{scoreData.completed_actions}</span>
+          <span class="metric-label">Actions terminées</span>
         </div>
       </div>
     </div>
   {/if}
 </div>
+
+<style>
+  .card {
+    background: var(--mantis-bg-raised);
+    border: 1px solid var(--mantis-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
+
+  .score-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .score-main {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--mantis-bg);
+    border-radius: 6px;
+    border: 1px solid var(--mantis-border);
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .metric-label {
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mantis-text-muted);
+    text-align: center;
+  }
+</style>
