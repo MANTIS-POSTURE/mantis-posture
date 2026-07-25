@@ -68,7 +68,7 @@
               <ul>
                 {#each getActionsForIncident(incident.id) as action (action.id)}
                   <li>
-                    <a href={`/actions?id=${action.id}`} class="action-link" onclick|stopPropagation>
+                    <a href={`/actions?id=${action.id}`} class="action-link" onclick={(e) => e.stopPropagation()}>
                       {action.title}
                     </a>
                     <span class="status-badge">{getStatusLabel(action.status)}</span>
