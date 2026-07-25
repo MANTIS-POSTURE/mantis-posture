@@ -35,12 +35,12 @@
     <div class="side-col">
       <Timeline />
       
-      <div class="card quick-actions">
+      <div class="glass-card quick-actions">
         <h2>Actions rapides</h2>
         <div class="action-buttons">
-          <a class="btn" href="/identites">Ajouter une identité</a>
-          <a class="btn" href="/incidents">Déclarer un incident</a>
-          <a class="btn" href="/dpo">Nouvelle demande RGPD</a>
+          <a class="wf-btn" href="/identites">Ajouter une identité</a>
+          <a class="wf-btn" href="/incidents">Déclarer un incident</a>
+          <a class="wf-btn" href="/dpo">Nouvelle demande RGPD</a>
         </div>
       </div>
     </div>
@@ -78,13 +78,6 @@
     }
   }
 
-  .card {
-    background: var(--mantis-bg-raised);
-    border: 1px solid var(--mantis-border);
-    border-radius: 10px;
-    padding: 1.25rem;
-  }
-
   .quick-actions h2 {
     margin: 0 0 1rem;
     font-size: 0.95rem;
@@ -95,26 +88,5 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-  }
-
-  .btn {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 0.65rem 0.85rem;
-    border-radius: 6px;
-    border: 1px solid var(--mantis-border);
-    background: var(--mantis-bg);
-    color: var(--mantis-text);
-    font-size: 0.85rem;
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-    transition: border-color 0.12s, background 0.12s;
-  }
-
-  .btn:hover {
-    border-color: var(--mantis-accent);
-    background: color-mix(in srgb, var(--mantis-accent) 8%, var(--mantis-bg));
   }
 </style>

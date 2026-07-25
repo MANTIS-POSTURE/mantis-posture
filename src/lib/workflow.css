@@ -1,29 +1,31 @@
 /* Shared layout tokens for guided workflow views (Phase 1). */
 
 .wf-view {
-	max-width: 1100px;
+	max-width: 1200px;
 	margin: 0 auto;
-	padding: 2rem 2.5rem 3rem;
+	padding: var(--space-lg) var(--space-lg) 3rem;
 	display: flex;
 	flex-direction: column;
-	gap: 1.75rem;
+	gap: var(--space-lg);
 }
 
 .wf-header h1 {
 	margin: 0;
-	font-size: 1.5rem;
+	font-size: 1.6rem;
 	font-weight: 700;
+	letter-spacing: -0.02em;
 }
 
 .wf-sub {
-	margin: 0.25rem 0 0;
+	margin: 0.35rem 0 0;
 	color: var(--mantis-text-muted);
+	font-size: 0.95rem;
 }
 
 .wf-grid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 1rem;
+	gap: var(--space-md);
 }
 
 @media (max-width: 900px) {
@@ -32,18 +34,25 @@
 	}
 }
 
-.wf-panel {
+/* Glassmorphism panel */
+.wf-panel,
+.glass-card {
 	background: var(--mantis-bg-raised);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
 	border: 1px solid var(--mantis-border);
-	border-radius: 10px;
-	padding: 1.25rem 1.35rem;
+	border-radius: var(--radius-md);
+	padding: var(--space-md);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.wf-panel h2 {
-	margin: 0 0 1rem;
-	font-size: 0.95rem;
+.wf-panel h2,
+.glass-card h2 {
+	margin: 0 0 var(--space-md);
+	font-size: 1rem;
 	font-weight: 600;
 	letter-spacing: 0.02em;
+	color: var(--mantis-text);
 }
 
 .wf-list {
@@ -52,35 +61,36 @@
 	padding: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
+	gap: var(--space-xs);
 }
 
 .wf-row {
 	display: flex;
 	align-items: flex-start;
-	gap: 0.75rem;
+	gap: var(--space-sm);
 	width: 100%;
-	padding: 0.75rem 0.9rem;
-	border: 1px solid var(--mantis-border);
-	border-radius: 8px;
-	background: var(--mantis-bg);
+	padding: var(--space-sm) var(--space-md);
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm);
+	background: rgba(255, 255, 255, 0.02);
 	color: inherit;
 	text-align: left;
 	font: inherit;
 	cursor: pointer;
 	text-decoration: none;
-	transition: border-color 0.12s, background 0.12s;
+	transition: all 0.15s ease;
 }
 
 .wf-row:hover,
 .wf-row:focus-visible {
-	border-color: var(--mantis-accent);
+	border-color: var(--mantis-border-strong);
+	background: rgba(255, 255, 255, 0.05);
 	outline: none;
 }
 
 .wf-row.active {
 	border-color: var(--mantis-accent);
-	background: color-mix(in srgb, var(--mantis-accent) 8%, var(--mantis-bg));
+	background: color-mix(in srgb, var(--mantis-accent) 10%, transparent);
 }
 
 .wf-row.static {
@@ -88,7 +98,8 @@
 }
 
 .wf-row.static:hover {
-	border-color: var(--mantis-border);
+	border-color: transparent;
+	background: rgba(255, 255, 255, 0.02);
 }
 
 .wf-meta {
@@ -99,13 +110,14 @@
 }
 
 .wf-title {
-	font-size: 0.9rem;
+	font-size: 0.95rem;
 	font-weight: 600;
+	color: var(--mantis-text);
 }
 
 .wf-desc {
-	margin: 0.2rem 0 0;
-	font-size: 0.82rem;
+	margin: 0.25rem 0 0;
+	font-size: 0.85rem;
 	color: var(--mantis-text-muted);
 }
 
@@ -125,127 +137,139 @@
 
 .wf-badge {
 	display: inline-block;
-	padding: 0.15rem 0.45rem;
+	padding: 0.2rem 0.5rem;
 	border-radius: 4px;
-	font-size: 0.68rem;
+	font-size: 0.7rem;
 	font-weight: 600;
-	letter-spacing: 0.06em;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	border: 1px solid var(--mantis-border);
 	color: var(--mantis-text-muted);
+	background: rgba(255, 255, 255, 0.03);
 }
 
-.wf-badge.tone-danger { color: var(--mantis-danger); border-color: color-mix(in srgb, var(--mantis-danger) 40%, var(--mantis-border)); }
-.wf-badge.tone-warn { color: var(--mantis-warn); border-color: color-mix(in srgb, var(--mantis-warn) 40%, var(--mantis-border)); }
-.wf-badge.tone-ok { color: var(--mantis-ok); border-color: color-mix(in srgb, var(--mantis-ok) 40%, var(--mantis-border)); }
+.wf-badge.tone-danger { color: var(--mantis-danger); border-color: color-mix(in srgb, var(--mantis-danger) 40%, var(--mantis-border)); background: color-mix(in srgb, var(--mantis-danger) 10%, transparent); }
+.wf-badge.tone-warn { color: var(--mantis-warn); border-color: color-mix(in srgb, var(--mantis-warn) 40%, var(--mantis-border)); background: color-mix(in srgb, var(--mantis-warn) 10%, transparent); }
+.wf-badge.tone-ok { color: var(--mantis-ok); border-color: color-mix(in srgb, var(--mantis-ok) 40%, var(--mantis-border)); background: color-mix(in srgb, var(--mantis-ok) 10%, transparent); }
 
 .wf-detail h3 {
-	margin: 0 0 0.75rem;
-	font-size: 1.05rem;
+	margin: 0 0 var(--space-md);
+	font-size: 1.2rem;
+	font-weight: 600;
 }
 
 .wf-field {
-	margin: 0 0 0.9rem;
+	margin: 0 0 var(--space-md);
 }
 
 .wf-field dt {
-	font-size: 0.72rem;
+	font-size: 0.75rem;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
 	color: var(--mantis-text-muted);
-	margin-bottom: 0.2rem;
+	margin-bottom: 0.3rem;
 }
 
 .wf-field dd {
 	margin: 0;
-	font-size: 0.88rem;
+	font-size: 0.9rem;
+	color: var(--mantis-text);
 }
 
 .wf-steps {
 	margin: 0;
-	padding-left: 1.1rem;
+	padding-left: 1.2rem;
 	display: flex;
 	flex-direction: column;
-	gap: 0.4rem;
-	font-size: 0.88rem;
+	gap: 0.5rem;
+	font-size: 0.9rem;
 }
 
 .wf-actions {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin-top: 1rem;
+	gap: var(--space-xs);
+	margin-top: var(--space-md);
 }
 
 .wf-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	padding: 0.45rem 0.85rem;
-	border-radius: 6px;
-	border: 1px solid var(--mantis-border);
-	background: var(--mantis-bg);
+	gap: 0.4rem;
+	padding: 0.5rem 1rem;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--mantis-border-strong);
+	background: rgba(255, 255, 255, 0.03);
 	color: var(--mantis-text);
-	font-size: 0.82rem;
-	font-weight: 600;
+	font-size: 0.85rem;
+	font-weight: 500;
 	text-decoration: none;
 	cursor: pointer;
 	font-family: inherit;
+	transition: all 0.15s ease;
 }
 
 .wf-btn:hover {
 	border-color: var(--mantis-accent);
+	background: rgba(91, 141, 239, 0.1);
 }
 
 .wf-btn.primary {
-	background: color-mix(in srgb, var(--mantis-accent) 22%, var(--mantis-bg));
-	border-color: color-mix(in srgb, var(--mantis-accent) 50%, var(--mantis-border));
+	background: var(--mantis-accent);
+	border-color: var(--mantis-accent);
+	color: #fff;
+	font-weight: 600;
+}
+
+.wf-btn.primary:hover {
+	background: color-mix(in srgb, var(--mantis-accent) 90%, #fff);
 }
 
 .wf-btn:disabled {
-	opacity: 0.45;
+	opacity: 0.4;
 	cursor: not-allowed;
 }
 
 .wf-empty {
 	margin: 0;
-	font-size: 0.88rem;
+	font-size: 0.9rem;
 	color: var(--mantis-text-muted);
 }
 
 .wf-draft {
 	margin: 0;
-	padding: 0.9rem 1rem;
-	border-radius: 8px;
+	padding: var(--space-md);
+	border-radius: var(--radius-sm);
 	border: 1px solid var(--mantis-border);
-	background: var(--mantis-bg);
-	font-size: 0.82rem;
+	background: rgba(0, 0, 0, 0.2);
+	font-size: 0.85rem;
 	white-space: pre-wrap;
-	line-height: 1.55;
-	max-height: 280px;
+	line-height: 1.6;
+	max-height: 300px;
 	overflow-y: auto;
+	font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 .wf-note {
-	margin: 0.75rem 0 0;
-	font-size: 0.78rem;
+	margin: var(--space-sm) 0 0;
+	font-size: 0.8rem;
 	color: var(--mantis-text-muted);
 }
 
 .wf-summary {
-	margin: 0 0 1rem;
-	padding: 0.75rem 0.9rem;
-	border-radius: 8px;
+	margin: 0 0 var(--space-md);
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-sm);
 	border-left: 3px solid var(--mantis-accent);
-	background: color-mix(in srgb, var(--mantis-accent) 6%, var(--mantis-bg));
-	font-size: 0.88rem;
-	line-height: 1.45;
+	background: color-mix(in srgb, var(--mantis-accent) 5%, transparent);
+	font-size: 0.9rem;
+	line-height: 1.5;
 }
 
 .wf-cta-hint {
 	display: block;
-	margin-top: 0.35rem;
-	font-size: 0.75rem;
+	margin-top: 0.4rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 	color: var(--mantis-accent);
 }
@@ -253,17 +277,17 @@
 .wf-secondary-links {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.45rem;
-	margin-top: 0.65rem;
+	gap: 0.5rem;
+	margin-top: var(--space-sm);
 }
 
 .wf-secondary-links .wf-btn {
 	font-weight: 500;
-	opacity: 0.9;
+	opacity: 0.8;
 }
 
 .wf-split {
-	grid-template-columns: minmax(240px, 0.85fr) 1.25fr;
+	grid-template-columns: minmax(260px, 0.8fr) 1.2fr;
 }
 
 @media (max-width: 900px) {
@@ -271,4 +295,3 @@
 		grid-template-columns: 1fr;
 	}
 }
-

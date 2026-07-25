@@ -41,7 +41,7 @@
   }
 </script>
 
-<div class="card">
+<div class="glass-card">
   <h2>Incidents & Actions</h2>
   
   {#if loading}
@@ -84,19 +84,6 @@
 </div>
 
 <style>
-  .card {
-    background: var(--mantis-bg-raised);
-    border: 1px solid var(--mantis-border);
-    border-radius: 10px;
-    padding: 1.25rem;
-  }
-
-  h2 {
-    margin: 0 0 1rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
   .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
   .error { color: var(--mantis-danger); font-size: 0.85rem; }
 
@@ -111,7 +98,7 @@
     padding: 1rem;
     border: 1px solid var(--mantis-border);
     border-radius: 8px;
-    background: var(--mantis-bg);
+    background: rgba(0, 0, 0, 0.2);
     text-decoration: none;
     color: inherit;
     transition: border-color 0.12s;
@@ -191,7 +178,7 @@
     padding: 0.1rem 0.4rem;
     border-radius: 3px;
     font-size: 0.7rem;
-    background: var(--mantis-bg-raised);
+    background: var(--mantis-bg-solid);
     border: 1px solid var(--mantis-border);
     color: var(--mantis-text-muted);
   }

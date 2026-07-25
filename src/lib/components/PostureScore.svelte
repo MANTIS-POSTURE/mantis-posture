@@ -23,7 +23,7 @@
   }
 </script>
 
-<div class="card">
+<div class="glass-card">
   <h2>Score de posture</h2>
   
   {#if loading}
@@ -54,19 +54,6 @@
 </div>
 
 <style>
-  .card {
-    background: var(--mantis-bg-raised);
-    border: 1px solid var(--mantis-border);
-    border-radius: 10px;
-    padding: 1.25rem;
-  }
-
-  h2 {
-    margin: 0 0 1rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
   .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
   .error { color: var(--mantis-danger); font-size: 0.85rem; }
 
@@ -74,13 +61,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 
   .score-main {
-    font-size: 3.5rem;
+    font-size: 4rem;
     font-weight: 700;
     line-height: 1;
+    text-shadow: 0 0 20px currentColor;
   }
 
   .metrics-grid {
@@ -95,7 +83,7 @@
     flex-direction: column;
     align-items: center;
     padding: 0.75rem;
-    background: var(--mantis-bg);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
     border: 1px solid var(--mantis-border);
   }

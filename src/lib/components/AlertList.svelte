@@ -39,7 +39,7 @@
   }
 </script>
 
-<div class="card">
+<div class="glass-card">
   <h2>Alertes</h2>
   <div class="alert-list">
     {#each alerts as alert}
@@ -58,19 +58,6 @@
 </div>
 
 <style>
-  .card {
-    background: var(--mantis-bg-raised);
-    border: 1px solid var(--mantis-border);
-    border-radius: 10px;
-    padding: 1.25rem;
-  }
-
-  h2 {
-    margin: 0 0 1rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
   .alert-list {
     display: flex;
     flex-direction: column;
@@ -84,6 +71,7 @@
     gap: 1rem;
     padding: 0.75rem 1rem;
     border-radius: 0 6px 6px 0;
+    backdrop-filter: blur(4px);
   }
 
   .alert-content {
@@ -111,6 +99,7 @@
     font-weight: 600;
     text-decoration: none;
     transition: opacity 0.12s;
+    background: rgba(0, 0, 0, 0.2);
   }
 
   .alert-btn:hover {

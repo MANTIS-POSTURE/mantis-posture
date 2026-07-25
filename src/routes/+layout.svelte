@@ -76,11 +76,11 @@
 	}
 
 	.sidebar {
-		width: 260px;
+		width: 240px;
 		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 1.75rem;
+		gap: 1.5rem;
 		padding: 1.25rem 0.75rem;
 		background: var(--mantis-bg-sidebar);
 		border-right: 1px solid var(--mantis-border);
@@ -92,35 +92,38 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0 0.5rem;
+		margin-bottom: 0.5rem;
 	}
 
 	.brand-mark {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 34px;
-		height: 34px;
-		border: 1px solid var(--mantis-border);
+		width: 36px;
+		height: 36px;
+		border: 1px solid var(--mantis-border-strong);
 		border-radius: 8px;
-		background: var(--mantis-bg-raised);
+		background: var(--mantis-bg-solid);
 		color: var(--mantis-accent);
 		font-weight: 700;
+		font-size: 1.1rem;
 	}
 
 	.brand-text {
 		display: flex;
 		flex-direction: column;
-		line-height: 1.15;
+		line-height: 1.1;
 	}
 
 	.brand-name {
 		font-weight: 700;
 		letter-spacing: 0.08em;
+		font-size: 1rem;
 	}
 
 	.brand-sub {
-		font-size: 0.72rem;
-		letter-spacing: 0.28em;
+		font-size: 0.7rem;
+		letter-spacing: 0.3em;
 		color: var(--mantis-text-muted);
 	}
 
@@ -135,22 +138,22 @@
 
 	.nav-item {
 		display: block;
-		padding: 0.45rem 0.75rem;
+		padding: 0.5rem 0.75rem;
 		border-radius: 6px;
 		border-left: 2px solid transparent;
 		font-size: 0.85rem;
 		color: var(--mantis-text-muted);
 		text-decoration: none;
-		transition: background 0.12s, color 0.12s, border-color 0.12s;
+		transition: all 0.15s ease;
 	}
 
 	.nav-item:hover {
-		background: var(--mantis-bg-raised);
+		background: rgba(255, 255, 255, 0.03);
 		color: var(--mantis-text);
 	}
 
 	.nav-item.active {
-		background: var(--mantis-bg-raised);
+		background: rgba(91, 141, 239, 0.1);
 		border-left-color: var(--mantis-accent);
 		color: var(--mantis-text);
 		font-weight: 600;
@@ -160,6 +163,6 @@
 		flex: 1;
 		min-width: 0;
 		overflow-y: auto;
+		background: linear-gradient(180deg, var(--mantis-bg) 0%, #0a0b0e 100%);
 	}
 </style>
-

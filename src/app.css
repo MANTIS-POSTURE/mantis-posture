@@ -1,24 +1,36 @@
 /* MANTIS POSTURE — base visuelle "cockpit" (thème sombre graphite/ardoise).
    Palette et principes alignés sur docs/mantis-product.md :
-   professionnel, sobre, orienté analyse, sans esthétique "hacker/cyberpunk".
-   Cette base sera adossée à Tailwind dans une étape ultérieure de la Phase 1. */
+   professionnel, sobre, orienté analyse, sans esthétique "hacker/cyberpunk". */
 
 :root {
-	/* Fonds */
-	--mantis-bg: #0e1217; /* graphite principal */
-	--mantis-bg-raised: #151b23; /* panneaux, cards */
-	--mantis-bg-sidebar: #10151c; /* colonne sidebar */
-	--mantis-border: #232c38; /* bordures discrètes */
+	/* Fonds - Tons très sombres, gris charbon */
+	--mantis-bg: #08090c; /* quasi noir */
+	--mantis-bg-raised: rgba(20, 23, 28, 0.6); /* panneau glassmorphism */
+	--mantis-bg-solid: #14171c; /* fallback sans transparence */
+	--mantis-bg-sidebar: #0c0e12; /* colonne sidebar */
+	--mantis-border: rgba(255, 255, 255, 0.08); /* bordures discrètes lumineuses */
+	--mantis-border-strong: rgba(255, 255, 255, 0.15);
 
 	/* Texte */
-	--mantis-text: #e6e9ee; /* texte principal */
-	--mantis-text-muted: #8b95a3; /* métadonnées, sous-texte */
+	--mantis-text: #e8eaed; /* texte principal */
+	--mantis-text-muted: #9aa0a6; /* métadonnées, sous-texte */
 
-	/* Accents d'état (alertes, statuts) */
-	--mantis-accent: #4f8cff; /* accent neutre cockpit */
+	/* Accents d'état (alertes, statuts) - clairs et sobres */
+	--mantis-accent: #5b8def; /* accent neutre cockpit (bleu Proton/Palantir) */
 	--mantis-ok: #3fb96c; /* OK / positif */
-	--mantis-warn: #d9a036; /* attention */
-	--mantis-danger: #d9534f; /* critique */
+	--mantis-warn: #f5b400; /* attention */
+	--mantis-danger: #e5484d; /* critique */
+
+	/* Espacements */
+	--space-xs: 0.5rem;
+	--space-sm: 0.75rem;
+	--space-md: 1.25rem;
+	--space-lg: 1.75rem;
+
+	/* Rayons */
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
 
 	color-scheme: dark;
 }
@@ -33,16 +45,29 @@ body {
 	padding: 0;
 	background: var(--mantis-bg);
 	color: var(--mantis-text);
-	/* Polices système uniquement : aucun téléchargement de webfont
-	   (local-first, aucune requête réseau implicite). */
-	font-family:
-		system-ui,
-		-apple-system,
-		'Segoe UI',
-		Roboto,
-		'Helvetica Neue',
-		Arial,
-		sans-serif;
+	/* Polices système modernes en priorité */
+	font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 	font-size: 14px;
 	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.2);
 }
