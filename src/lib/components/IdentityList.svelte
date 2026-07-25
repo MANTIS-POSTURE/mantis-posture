@@ -39,7 +39,7 @@
         <tbody>
           {#each identities as identity (identity.id)}
             <tr class="border-b border-slate-700">
-              <td class="px-4 py-2 capitalize">{identity.identity_type}</td>
+              <td class="px-4 py-2 capitalize">{identity.kind}</td>
               <td class="px-4 py-2 font-mono text-slate-100">{identity.value}</td>
               <td class="px-4 py-2 text-slate-400">{identity.label || '-'}</td>
             </tr>

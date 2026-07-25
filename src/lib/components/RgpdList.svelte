@@ -16,18 +16,14 @@
     }
   });
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-  }
-
-  function getStatusColor(status: string): string {
-    switch (status.toLowerCase()) {
-      case 'en cours':
+  function getStatusColor(status_id: string): string {
+    switch (status_id.toLowerCase()) {
+      case 'status_002': // prete
         return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
-      case 'terminé':
+      case 'status_003': // envoyee
+        return 'bg-blue-900/50 text-blue-300 border-blue-700';
+      case 'status_004': // repondue
         return 'bg-green-900/50 text-green-300 border-green-700';
-      case 'refusé':
-        return 'bg-red-900/50 text-red-300 border-red-700';
       default:
         return 'bg-slate-700 text-slate-300 border-slate-600';
     }
@@ -49,18 +45,18 @@
         <div class="border border-slate-700 rounded-md p-3 bg-slate-900/50">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h3 class="text-md font-semibold text-slate-100">{req.target_entity}</h3>
-              <p class="text-xs text-slate-500">Créée le {formatDate(req.created_at)}</p>
+              <h3 class="text-md font-semibold text-slate-100">{req.target}</h3>
+              <p class="text-xs text-slate-500">Type: {req.type_id}</p>
             </div>
-            <span class="px-2 py-1 text-xs rounded-full border {getStatusColor(req.status)}">
-              {req.status}
+            <span class="px-2 py-1 text-xs rounded-full border {getStatusColor(req.status_id)}">
+              {req.status_id}
             </span>
           </div>
           <div class="text-sm text-slate-400 mb-2">
-            <span class="font-medium text-slate-300">Type:</span> {req.request_type}
+            <span class="font-medium text-slate-300">Contact DPO:</span> {req.dpo_contact}
           </div>
-          {#if req.notes}
-            <p class="text-sm text-slate-400 italic">"{req.notes}"</p>
+          {#if req.data_summary}
+            <p class="text-sm text-slate-400 italic">"{req.data_summary}"</p>
           {/if}
         </div>
       {/each}
