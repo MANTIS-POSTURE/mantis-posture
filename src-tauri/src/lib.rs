@@ -268,15 +268,15 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
         // Seed OSINT Modules
         conn.execute(
             "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params!["osint-breaches", "Vérification fuites (e-mails)", "Vérifie les e-mails du dossier Personnel dans les bases de fuites publiques.", "email", "Hebdomadaire", "planifie", null, "Phase 4"]
+            params!["osint-breaches", "Vérification fuites (e-mails)", "Vérifie les e-mails du dossier Personnel dans les bases de fuites publiques.", "email", "Hebdomadaire", "planifie", None, "Phase 4"]
         ).map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params!["osint-search", "Mentions publiques (nom + pseudo)", "Recherche les mentions du nom et des pseudos sur les moteurs de recherche.", "nom", "Mensuelle", "planifie", null, "Phase 4"]
+            params!["osint-search", "Mentions publiques (nom + pseudo)", "Recherche les mentions du nom et des pseudos sur les moteurs de recherche.", "nom", "Mensuelle", "planifie", None, "Phase 4"]
         ).map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params!["osint-address", "Exposition adresse (annuaires)", "Vérifie si les adresses connues apparaissent dans des annuaires publics.", "adresse", "Trimestrielle", "desactive", null, null]
+            params!["osint-address", "Exposition adresse (annuaires)", "Vérifie si les adresses connues apparaissent dans des annuaires publics.", "adresse", "Trimestrielle", "desactive", None, None]
         ).map_err(|e| e.to_string())?;
     }
 
