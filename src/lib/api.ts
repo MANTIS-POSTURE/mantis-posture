@@ -55,6 +55,13 @@ export interface TimelineEntry {
   created_at: string;
 }
 
+export interface PostureScore {
+  score: number;
+  open_incidents: number;
+  high_exposures: number;
+  completed_actions: number;
+}
+
 export async function listFolders(): Promise<Folder[]> {
   return await invoke<Folder[]>('list_folders');
 }
@@ -81,4 +88,8 @@ export async function listRgpdRequests(): Promise<RgpdRequest[]> {
 
 export async function listTimelineEntries(): Promise<TimelineEntry[]> {
   return await invoke<TimelineEntry[]>('list_timeline_entries');
+}
+
+export async function getPostureScore(): Promise<PostureScore> {
+  return await invoke<PostureScore>('get_posture_score');
 }

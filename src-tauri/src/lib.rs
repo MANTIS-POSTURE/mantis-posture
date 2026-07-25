@@ -64,6 +64,14 @@ struct TimelineEntry {
     created_at: String,
 }
 
+#[derive(Serialize)]
+struct PostureScore {
+    score: i32,
+    open_incidents: i32,
+    high_exposures: i32,
+    completed_actions: i32,
+}
+
 fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
@@ -379,6 +387,70 @@ fn list_timeline_entries(app: tauri::AppHandle) -> Result<Vec<TimelineEntry>, St
     Ok(entries)
 }
 
+#[tauri::command]
+fn get_posture_score(app: tauri::AppHandle) -> Result<PostureScore, String> {
+    let conn = init_database(&app)?;
+
+    let mut score = 100;
+    
+    // Pénalités pour les incidents ouverts
+    let mut stmt_inc = conn.prepare("SELECT severity FROM incidents WHERE status = 'Ouvert'").map_err(|e| e.to_string())?;
+    let inc_iter = stmt_inc.query_map([], |row| {
+        let sev: String = row.get(0)?;
+        Ok(sev)
+    }).map_err(|e| e.to_string())?;
+
+    let mut open_incidents = 0;
+    for sev_res in inc_iter {
+        let sev = sev_res.map_err(|e| e.to_string())?;
+        open_incidents += 1;
+        match sev.as_str() {
+            "Critique" => score -= 20,
+            "Élevée" => score -= 10,
+            "Modérée" => score -= 5,
+            "Faible" => score -= 2,
+            _ => {}
+        }
+    }
+
+    // Pénalités pour les expositions
+    let mut stmt_exp = conn.prepare("SELECT severity FROM exposures").map_err(|e| e.to_string())?;
+    let exp_iter = stmt_exp.query_map([], |row| {
+        let sev: String = row.get(0)?;
+        Ok(sev)
+    }).map_err(|e| e.to_string())?;
+
+    let mut high_exposures = 0;
+    for sev_res in exp_iter {
+        let sev = sev_res.map_err(|e| e.to_string())?;
+        if sev == "Élevée" || sev == "Critique" {
+            high_exposures += 1;
+        }
+        match sev.as_str() {
+            "Critique" => score -= 5,
+            "Élevée" => score -= 5,
+            "Modérée" => score -= 3,
+            "Faible" => score -= 1,
+            _ => {}
+        }
+    }
+
+    // Bonus pour les actions terminées
+    let completed: i64 = conn.query_row("SELECT COUNT(*) FROM actions WHERE status = 'Terminé'", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let bonus = (completed * 2).min(10); // Max +10 points
+    score += bonus as i32;
+
+    if score < 0 { score = 0; }
+    if score > 100 { score = 100; }
+
+    Ok(PostureScore {
+        score,
+        open_incidents,
+        high_exposures,
+        completed_actions: completed as i32,
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -390,7 +462,8 @@ pub fn run() {
             list_identities, 
             list_exposures,
             list_rgpd_requests,
-            list_timeline_entries
+            list_timeline_entries,
+            get_posture_score
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
