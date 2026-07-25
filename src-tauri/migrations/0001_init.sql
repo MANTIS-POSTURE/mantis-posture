@@ -78,14 +78,14 @@ CREATE TABLE action_metadata (
 );
 
 -- Insert standard priorities
-INSERT INTO action_metadata (id, type, value, label) VALUES
+INSERT OR IGNORE INTO action_metadata (id, type, value, label) VALUES
 ('prio_001', 'priority', 'basse', 'Basse'),
 ('prio_002', 'priority', 'moyenne', 'Moyenne'),
 ('prio_003', 'priority', 'haute', 'Haute'),
 ('prio_004', 'priority', 'critique', 'Critique');
 
 -- Insert standard difficulties
-INSERT INTO action_metadata (id, type, value, label) VALUES
+INSERT OR IGNORE INTO action_metadata (id, type, value, label) VALUES
 ('diff_001', 'difficulty', 'facile', 'Facile'),
 ('diff_002', 'difficulty', 'moyenne', 'Moyenne'),
 ('diff_003', 'difficulty', 'difficile', 'Difficile');
@@ -114,7 +114,7 @@ CREATE TABLE rgpd_types (
 );
 
 -- Insert RGPD request types
-INSERT INTO rgpd_types (id, name, label) VALUES
+INSERT OR IGNORE INTO rgpd_types (id, name, label) VALUES
 ('type_001', 'acces', 'Accès'),
 ('type_002', 'rectification', 'Rectification'),
 ('type_003', 'effacement', 'Effacement'),
@@ -130,7 +130,7 @@ CREATE TABLE rgpd_statuses (
 );
 
 -- Insert RGPD statuses
-INSERT INTO rgpd_statuses (id, name, label) VALUES
+INSERT OR IGNORE INTO rgpd_statuses (id, name, label) VALUES
 ('status_001', 'brouillon', 'Brouillon'),
 ('status_002', 'prete', 'Prête à envoyer'),
 ('status_003', 'envoyee', 'Envoyée'),
@@ -147,6 +147,14 @@ CREATE TABLE rgpd_requests (
     draft_preview TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Timeline entries
+CREATE TABLE timeline_entries (
+    id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    description TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Relationships between entities

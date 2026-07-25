@@ -4,61 +4,77 @@ use tauri::Manager;
 
 #[derive(Serialize)]
 struct Folder {
-    id: i64,
+    id: String,
     name: String,
-    description: String,
+    context: String,
 }
 
 #[derive(Serialize)]
 struct Incident {
-    id: i64,
+    id: String,
     title: String,
     severity: String,
-    status: String,
-    description: String,
+    discovered_at: String,
+    what: String,
+    why: String,
+    impact: String,
+    confidence: String,
+    next_step: String,
+    folder_id: Option<String>,
 }
 
 #[derive(Serialize)]
 struct Action {
-    id: i64,
+    id: String,
     title: String,
-    priority: String,
+    priority_id: String,
+    difficulty_id: String,
+    deadline: String,
     status: String,
-    incident_id: Option<i64>,
+    guidance: String,
+    proof_expected: String,
+    folder_id: Option<String>,
+    incident_id: Option<String>,
 }
 
 #[derive(Serialize)]
 struct Identity {
-    id: i64,
-    folder_id: Option<i64>,
-    identity_type: String,
+    id: String,
+    label: String,
+    kind: String,
     value: String,
-    label: Option<String>,
-}
-
-#[derive(Serialize)]
-struct Exposure {
-    id: i64,
-    identity_id: Option<i64>,
-    source: String,
-    severity: String,
-    description: String,
-    detected_at: String,
-}
-
-#[derive(Serialize)]
-struct RgpdRequest {
-    id: i64,
-    target_entity: String,
-    request_type: String,
-    status: String,
-    created_at: String,
+    folder_id: Option<String>,
     notes: Option<String>,
 }
 
 #[derive(Serialize)]
+struct Exposure {
+    id: String,
+    title: String,
+    kind: String,
+    severity: String,
+    status: String,
+    discovered_at: String,
+    source: String,
+    what: String,
+    why: String,
+    folder_id: Option<String>,
+}
+
+#[derive(Serialize)]
+struct RgpdRequest {
+    id: String,
+    type_id: String,
+    target: String,
+    dpo_contact: String,
+    status_id: String,
+    data_summary: String,
+    draft_preview: String,
+}
+
+#[derive(Serialize)]
 struct TimelineEntry {
-    id: i64,
+    id: String,
     event_type: String,
     description: String,
     created_at: String,
@@ -72,6 +88,8 @@ struct PostureScore {
     completed_actions: i32,
 }
 
+const MIGRATION_SQL: &str = include_str!("../migrations/0001_init.sql");
+
 fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
@@ -79,148 +97,90 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     let db_path = app_dir.join("mantis.db");
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS folders (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS incidents (
-            id INTEGER PRIMARY KEY,
-            title TEXT NOT NULL,
-            severity TEXT NOT NULL,
-            status TEXT NOT NULL,
-            description TEXT
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS actions (
-            id INTEGER PRIMARY KEY,
-            title TEXT NOT NULL,
-            priority TEXT NOT NULL,
-            status TEXT NOT NULL,
-            incident_id INTEGER,
-            FOREIGN KEY(incident_id) REFERENCES incidents(id)
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS identities (
-            id INTEGER PRIMARY KEY,
-            folder_id INTEGER,
-            identity_type TEXT NOT NULL,
-            value TEXT NOT NULL,
-            label TEXT,
-            FOREIGN KEY(folder_id) REFERENCES folders(id)
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS exposures (
-            id INTEGER PRIMARY KEY,
-            identity_id INTEGER,
-            source TEXT NOT NULL,
-            severity TEXT NOT NULL,
-            description TEXT,
-            detected_at TEXT NOT NULL,
-            FOREIGN KEY(identity_id) REFERENCES identities(id)
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS rgpd_requests (
-            id INTEGER PRIMARY KEY,
-            target_entity TEXT NOT NULL,
-            request_type TEXT NOT NULL,
-            status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            notes TEXT
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS timeline_entries (
-            id INTEGER PRIMARY KEY,
-            event_type TEXT NOT NULL,
-            description TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )",
-        [],
-    ).map_err(|e| e.to_string())?;
+    // Apply migrations
+    conn.execute_batch(MIGRATION_SQL).map_err(|e| e.to_string())?;
 
     // Seed data if empty
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0)).map_err(|e| e.to_string())?;
     if count == 0 {
+        // Seed Folders
         conn.execute(
-            "INSERT INTO folders (name, description) VALUES (?1, ?2)",
-            params!["Personnel", "Dossier personnel principal"]
+            "INSERT INTO folders (id, name, context) VALUES (?1, ?2, ?3)",
+            params!["folder-perso", "Personnel", "Identités et traces hors travail"]
         ).map_err(|e| e.to_string())?;
-    }
+        conn.execute(
+            "INSERT INTO folders (id, name, context) VALUES (?1, ?2, ?3)",
+            params!["folder-job", "Emploi actuel", "Présence professionnelle et comptes liés au travail"]
+        ).map_err(|e| e.to_string())?;
 
-    let inc_count: i64 = conn.query_row("SELECT COUNT(*) FROM incidents", [], |row| row.get(0)).map_err(|e| e.to_string())?;
-    if inc_count == 0 {
+        // Seed Identities
         conn.execute(
-            "INSERT INTO incidents (title, severity, status, description) VALUES (?1, ?2, ?3, ?4)",
-            params!["Fuite d'email détectée", "Élevée", "Ouvert", "Adresse email trouvée dans une base de données publique."]
+            "INSERT INTO identities (id, label, kind, value, folder_id, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params!["id-name", "Nom complet", "nom", "Alex Martin", "folder-perso", ""]
         ).map_err(|e| e.to_string())?;
-        
         conn.execute(
-            "INSERT INTO actions (title, priority, status, incident_id) VALUES (?1, ?2, ?3, ?4)",
-            params!["Changer le mot de passe", "Haute", "À faire", 1]
+            "INSERT INTO identities (id, label, kind, value, folder_id, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params!["id-email-perso", "E-mail personnel", "email", "alex.martin.perso@example.com", "folder-perso", "Utilisé pour comptes grand public"]
         ).map_err(|e| e.to_string())?;
-    }
+        conn.execute(
+            "INSERT INTO identities (id, label, kind, value, folder_id, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params!["id-email-pro", "E-mail professionnel", "email", "a.martin@entreprise-exemple.example", "folder-job", ""]
+        ).map_err(|e| e.to_string())?;
 
-    let id_count: i64 = conn.query_row("SELECT COUNT(*) FROM identities", [], |row| row.get(0)).map_err(|e| e.to_string())?;
-    if id_count == 0 {
+        // Seed Exposures
         conn.execute(
-            "INSERT INTO identities (folder_id, identity_type, value, label) VALUES (?1, ?2, ?3, ?4)",
-            params![1, "email", "jean.dupont@example.com", "Email principal"]
+            "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["exp-linkedin-email", "E-mail pro sur profil LinkedIn", "profil_public", "modérée", "en_suivi", "2026-07-20", "Profil public", "L'adresse e-mail professionnelle apparaît dans la section contact du profil.", "Facilite phishing ciblé et corrélation d'identités.", "folder-job"]
         ).map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT INTO identities (folder_id, identity_type, value, label) VALUES (?1, ?2, ?3, ?4)",
-            params![1, "pseudo", "jdupont", "Pseudo générique"]
+            "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["exp-leak-2019", "Occurrence e-mail — fuite 2019", "fuite", "élevée", "en_suivi", "2026-07-18", "Breach intelligence", "E-mail personnel signalé dans une fuite datée 2019.", "Risque si réutilisation d'identifiants sur des comptes encore actifs.", "folder-perso"]
         ).map_err(|e| e.to_string())?;
-    }
 
-    let exp_count: i64 = conn.query_row("SELECT COUNT(*) FROM exposures", [], |row| row.get(0)).map_err(|e| e.to_string())?;
-    if exp_count == 0 {
+        // Seed Incidents
         conn.execute(
-            "INSERT INTO exposures (identity_id, source, severity, description, detected_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![1, "Collection #1", "Élevée", "Email et mot de passe haché exposés.", "2023-10-15T12:00:00Z"]
+            "INSERT INTO incidents (id, title, severity, discovered_at, what, why, impact, confidence, next_step, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["inc-linkedin", "E-mail professionnel visible sur LinkedIn", "modérée", "2026-07-20", "Le profil LinkedIn affiche l'adresse e-mail professionnelle en clair.", "Cette adresse facilite le phishing ciblé, le scraping et la corrélation avec d'autres traces publiques.", "Phishing, usurpation légère, augmentation du volume de spam ciblé.", "Élevée — observation directe du profil public.", "Masquer ou retirer l'e-mail du profil, puis vérifier la page publique.", "folder-job"]
         ).map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT INTO exposures (identity_id, source, severity, description, detected_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![2, "Forum public", "Faible", "Pseudo lié à un profil sur un forum public.", "2024-01-20T08:30:00Z"]
+            "INSERT INTO incidents (id, title, severity, discovered_at, what, why, impact, confidence, next_step, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["inc-leaks", "Fuites anciennes d'identifiants", "élevée", "2026-07-18", "Deux occurrences d'un e-mail personnel dans des bases de fuites datées (2019 et 2021).", "Si un mot de passe a été réutilisé, des comptes encore actifs peuvent être exposés.", "Compromission de comptes, reprise d'accès non autorisée.", "Moyenne — correspondance e-mail, contexte de fuite partiel.", "Passer en revue les services concernés et confirmer rotation MFA / mots de passe (hors MANTIS).", "folder-perso"]
         ).map_err(|e| e.to_string())?;
-    }
 
-    let rgpd_count: i64 = conn.query_row("SELECT COUNT(*) FROM rgpd_requests", [], |row| row.get(0)).map_err(|e| e.to_string())?;
-    if rgpd_count == 0 {
+        // Seed Actions
         conn.execute(
-            "INSERT INTO rgpd_requests (target_entity, request_type, status, created_at, notes) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params!["Réseau Social X", "Effacement", "En cours", "2024-05-10T10:00:00Z", "Demande d'effacement de l'ancien profil."]
+            "INSERT INTO actions (id, title, priority_id, difficulty_id, deadline, status, guidance, proof_expected, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params!["act-linkedin-email", "Masquer l'e-mail sur LinkedIn", "prio_003", "diff_001", "2026-07-28", "a_faire", "[\"Ouvrir les paramètres de confidentialité du profil LinkedIn.\",\"Retirer ou masquer l'adresse e-mail professionnelle de la vue publique.\"]", "Capture ou note : e-mail plus visible en mode public.", "folder-job"]
         ).map_err(|e| e.to_string())?;
-    }
+        conn.execute(
+            "INSERT INTO actions (id, title, priority_id, difficulty_id, deadline, status, guidance, proof_expected, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params!["act-review-leaks", "Revue des comptes liés aux fuites", "prio_004", "diff_002", "2026-08-01", "en_cours", "[\"Lister les services où l'e-mail fuité était utilisé (hors MANTIS).\",\"Pour chaque compte encore actif : changer le mot de passe et activer MFA.\"]", "Liste des services revus (noms uniquement).", "folder-perso"]
+        ).map_err(|e| e.to_string())?;
 
-    let timeline_count: i64 = conn.query_row("SELECT COUNT(*) FROM timeline_entries", [], |row| row.get(0)).map_err(|e| e.to_string())?;
-    if timeline_count == 0 {
+        // Seed Incident-Action Relations
         conn.execute(
-            "INSERT INTO timeline_entries (event_type, description, created_at) VALUES (?1, ?2, ?3)",
-            params!["Détection", "Fuite d'email détectée dans Collection #1", "2023-10-15T12:00:00Z"]
+            "INSERT INTO incident_action (incident_id, action_id) VALUES (?1, ?2)",
+            params!["inc-linkedin", "act-linkedin-email"]
         ).map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT INTO timeline_entries (event_type, description, created_at) VALUES (?1, ?2, ?3)",
-            params!["Action", "Création d'une action pour changer le mot de passe", "2023-10-15T12:05:00Z"]
+            "INSERT INTO incident_action (incident_id, action_id) VALUES (?1, ?2)",
+            params!["inc-leaks", "act-review-leaks"]
+        ).map_err(|e| e.to_string())?;
+
+        // Seed RGPD Requests
+        conn.execute(
+            "INSERT INTO rgpd_requests (id, type_id, target, dpo_contact, status_id, data_summary, draft_preview) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params!["rgpd-1", "type_003", "Annuaire Web Exemple", "privacy@annuaire-exemple.example", "status_002", "Adresse postale ancienne publiée sur une fiche nominative.", "Objet : Demande d'effacement..."]
+        ).map_err(|e| e.to_string())?;
+
+        // Seed Timeline
+        conn.execute(
+            "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params!["tl-1", "Détection", "Fuite d'email détectée dans Collection #1", "2023-10-15T12:00:00Z"]
+        ).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params!["tl-2", "Action", "Création d'une action pour changer le mot de passe", "2023-10-15T12:05:00Z"]
         ).map_err(|e| e.to_string())?;
     }
 
@@ -231,12 +191,12 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
 fn list_folders(app: tauri::AppHandle) -> Result<Vec<Folder>, String> {
     let conn = init_database(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, name, description FROM folders").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, name, context FROM folders").map_err(|e| e.to_string())?;
     let folder_iter = stmt.query_map([], |row| {
         Ok(Folder {
             id: row.get(0)?,
             name: row.get(1)?,
-            description: row.get(2)?,
+            context: row.get(2)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -252,14 +212,19 @@ fn list_folders(app: tauri::AppHandle) -> Result<Vec<Folder>, String> {
 fn list_incidents(app: tauri::AppHandle) -> Result<Vec<Incident>, String> {
     let conn = init_database(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, title, severity, status, description FROM incidents").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, title, severity, discovered_at, what, why, impact, confidence, next_step, folder_id FROM incidents").map_err(|e| e.to_string())?;
     let incident_iter = stmt.query_map([], |row| {
         Ok(Incident {
             id: row.get(0)?,
             title: row.get(1)?,
             severity: row.get(2)?,
-            status: row.get(3)?,
-            description: row.get(4)?,
+            discovered_at: row.get(3)?,
+            what: row.get(4)?,
+            why: row.get(5)?,
+            impact: row.get(6)?,
+            confidence: row.get(7)?,
+            next_step: row.get(8)?,
+            folder_id: row.get(9)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -275,14 +240,23 @@ fn list_incidents(app: tauri::AppHandle) -> Result<Vec<Incident>, String> {
 fn list_actions(app: tauri::AppHandle) -> Result<Vec<Action>, String> {
     let conn = init_database(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, title, priority, status, incident_id FROM actions").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("
+        SELECT a.id, a.title, a.priority_id, a.difficulty_id, a.deadline, a.status, a.guidance, a.proof_expected, a.folder_id, ia.incident_id 
+        FROM actions a 
+        LEFT JOIN incident_action ia ON a.id = ia.action_id
+    ").map_err(|e| e.to_string())?;
     let action_iter = stmt.query_map([], |row| {
         Ok(Action {
             id: row.get(0)?,
             title: row.get(1)?,
-            priority: row.get(2)?,
-            status: row.get(3)?,
-            incident_id: row.get(4)?,
+            priority_id: row.get(2)?,
+            difficulty_id: row.get(3)?,
+            deadline: row.get(4)?,
+            status: row.get(5)?,
+            guidance: row.get(6)?,
+            proof_expected: row.get(7)?,
+            folder_id: row.get(8)?,
+            incident_id: row.get(9)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -298,14 +272,15 @@ fn list_actions(app: tauri::AppHandle) -> Result<Vec<Action>, String> {
 fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
     let conn = init_database(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, folder_id, identity_type, value, label FROM identities").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, label, kind, value, folder_id, notes FROM identities").map_err(|e| e.to_string())?;
     let identity_iter = stmt.query_map([], |row| {
         Ok(Identity {
             id: row.get(0)?,
-            folder_id: row.get(1)?,
-            identity_type: row.get(2)?,
+            label: row.get(1)?,
+            kind: row.get(2)?,
             value: row.get(3)?,
-            label: row.get(4)?,
+            folder_id: row.get(4)?,
+            notes: row.get(5)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -321,15 +296,19 @@ fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
 fn list_exposures(app: tauri::AppHandle) -> Result<Vec<Exposure>, String> {
     let conn = init_database(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, identity_id, source, severity, description, detected_at FROM exposures").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, title, kind, severity, status, discovered_at, source, what, why, folder_id FROM exposures").map_err(|e| e.to_string())?;
     let exposure_iter = stmt.query_map([], |row| {
         Ok(Exposure {
             id: row.get(0)?,
-            identity_id: row.get(1)?,
-            source: row.get(2)?,
+            title: row.get(1)?,
+            kind: row.get(2)?,
             severity: row.get(3)?,
-            description: row.get(4)?,
-            detected_at: row.get(5)?,
+            status: row.get(4)?,
+            discovered_at: row.get(5)?,
+            source: row.get(6)?,
+            what: row.get(7)?,
+            why: row.get(8)?,
+            folder_id: row.get(9)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -345,15 +324,16 @@ fn list_exposures(app: tauri::AppHandle) -> Result<Vec<Exposure>, String> {
 fn list_rgpd_requests(app: tauri::AppHandle) -> Result<Vec<RgpdRequest>, String> {
     let conn = init_database(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, target_entity, request_type, status, created_at, notes FROM rgpd_requests").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, type_id, target, dpo_contact, status_id, data_summary, draft_preview FROM rgpd_requests").map_err(|e| e.to_string())?;
     let rgpd_iter = stmt.query_map([], |row| {
         Ok(RgpdRequest {
             id: row.get(0)?,
-            target_entity: row.get(1)?,
-            request_type: row.get(2)?,
-            status: row.get(3)?,
-            created_at: row.get(4)?,
-            notes: row.get(5)?,
+            type_id: row.get(1)?,
+            target: row.get(2)?,
+            dpo_contact: row.get(3)?,
+            status_id: row.get(4)?,
+            data_summary: row.get(5)?,
+            draft_preview: row.get(6)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -393,8 +373,8 @@ fn get_posture_score(app: tauri::AppHandle) -> Result<PostureScore, String> {
 
     let mut score = 100;
     
-    // Pénalités pour les incidents ouverts
-    let mut stmt_inc = conn.prepare("SELECT severity FROM incidents WHERE status = 'Ouvert'").map_err(|e| e.to_string())?;
+    // Pénalités pour les incidents
+    let mut stmt_inc = conn.prepare("SELECT severity FROM incidents").map_err(|e| e.to_string())?;
     let inc_iter = stmt_inc.query_map([], |row| {
         let sev: String = row.get(0)?;
         Ok(sev)
@@ -405,10 +385,10 @@ fn get_posture_score(app: tauri::AppHandle) -> Result<PostureScore, String> {
         let sev = sev_res.map_err(|e| e.to_string())?;
         open_incidents += 1;
         match sev.as_str() {
-            "Critique" => score -= 20,
-            "Élevée" => score -= 10,
-            "Modérée" => score -= 5,
-            "Faible" => score -= 2,
+            "critique" => score -= 20,
+            "élevée" => score -= 10,
+            "modérée" => score -= 5,
+            "faible" => score -= 2,
             _ => {}
         }
     }
@@ -423,20 +403,20 @@ fn get_posture_score(app: tauri::AppHandle) -> Result<PostureScore, String> {
     let mut high_exposures = 0;
     for sev_res in exp_iter {
         let sev = sev_res.map_err(|e| e.to_string())?;
-        if sev == "Élevée" || sev == "Critique" {
+        if sev == "élevée" || sev == "critique" {
             high_exposures += 1;
         }
         match sev.as_str() {
-            "Critique" => score -= 5,
-            "Élevée" => score -= 5,
-            "Modérée" => score -= 3,
-            "Faible" => score -= 1,
+            "critique" => score -= 5,
+            "élevée" => score -= 5,
+            "modérée" => score -= 3,
+            "faible" => score -= 1,
             _ => {}
         }
     }
 
     // Bonus pour les actions terminées
-    let completed: i64 = conn.query_row("SELECT COUNT(*) FROM actions WHERE status = 'Terminé'", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let completed: i64 = conn.query_row("SELECT COUNT(*) FROM actions WHERE status = 'faite'", [], |row| row.get(0)).map_err(|e| e.to_string())?;
     let bonus = (completed * 2).min(10); // Max +10 points
     score += bonus as i32;
 

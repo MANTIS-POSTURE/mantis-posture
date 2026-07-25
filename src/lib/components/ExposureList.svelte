@@ -36,14 +36,14 @@
         <div class="border border-slate-700 rounded-md p-3 bg-slate-900/50">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h3 class="text-md font-semibold text-slate-100">{exposure.source}</h3>
-              <p class="text-xs text-slate-500">Détecté le {formatDate(exposure.detected_at)}</p>
+              <h3 class="text-md font-semibold text-slate-100">{exposure.title}</h3>
+              <p class="text-xs text-slate-500">Détecté le {formatDate(exposure.discovered_at)}</p>
             </div>
             <span class="px-2 py-1 text-xs rounded-full bg-orange-900/50 text-orange-300 border border-orange-700">
               {exposure.severity}
             </span>
           </div>
-          <p class="text-sm text-slate-400">{exposure.description}</p>
+          <p class="text-sm text-slate-400">{exposure.what}</p>
         </div>
       {/each}
     </div>

@@ -18,7 +18,7 @@
     }
   });
 
-  function getActionsForIncident(incidentId: number): Action[] {
+  function getActionsForIncident(incidentId: string): Action[] {
     return actions.filter(a => a.incident_id === incidentId);
   }
 </script>
@@ -42,7 +42,7 @@
               {incident.severity}
             </span>
           </div>
-          <p class="text-sm text-slate-400 mb-3">{incident.description}</p>
+          <p class="text-sm text-slate-400 mb-3">{incident.what}</p>
           
           <div class="mt-2">
             <h4 class="text-sm font-medium text-slate-300 mb-1">Actions requises:</h4>

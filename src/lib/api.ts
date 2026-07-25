@@ -1,55 +1,71 @@
 import { invoke } from '@tauri-apps/api/core';
 
 export interface Folder {
-  id: number;
+  id: string;
   name: string;
-  description: string;
+  context: string;
 }
 
 export interface Incident {
-  id: number;
+  id: string;
   title: string;
   severity: string;
-  status: string;
-  description: string;
+  discovered_at: string;
+  what: string;
+  why: string;
+  impact: string;
+  confidence: string;
+  next_step: string;
+  folder_id: string | null;
 }
 
 export interface Action {
-  id: number;
+  id: string;
   title: string;
-  priority: string;
+  priority_id: string;
+  difficulty_id: string;
+  deadline: string;
   status: string;
-  incident_id: number | null;
+  guidance: string;
+  proof_expected: string;
+  folder_id: string | null;
+  incident_id: string | null;
 }
 
 export interface Identity {
-  id: number;
-  folder_id: number | null;
-  identity_type: string;
+  id: string;
+  label: string;
+  kind: string;
   value: string;
-  label: string | null;
-}
-
-export interface Exposure {
-  id: number;
-  identity_id: number | null;
-  source: string;
-  severity: string;
-  description: string;
-  detected_at: string;
-}
-
-export interface RgpdRequest {
-  id: number;
-  target_entity: string;
-  request_type: string;
-  status: string;
-  created_at: string;
+  folder_id: string | null;
   notes: string | null;
 }
 
+export interface Exposure {
+  id: string;
+  title: string;
+  kind: string;
+  severity: string;
+  status: string;
+  discovered_at: string;
+  source: string;
+  what: string;
+  why: string;
+  folder_id: string | null;
+}
+
+export interface RgpdRequest {
+  id: string;
+  type_id: string;
+  target: string;
+  dpo_contact: string;
+  status_id: string;
+  data_summary: string;
+  draft_preview: string;
+}
+
 export interface TimelineEntry {
-  id: number;
+  id: string;
   event_type: string;
   description: string;
   created_at: string;
