@@ -52,10 +52,12 @@
     try {
       const result = await runOsintModule(selected.id);
       runResult = result;
-      // Refresh modules to update last_run
+      // Refresh modules to update last_run and status
       modules = await listOsintModules();
     } catch (e) {
       error = String(e);
+      // Refresh modules to show error status
+      modules = await listOsintModules();
     } finally {
       running = false;
     }
@@ -66,7 +68,7 @@
   <GuideHeader
     title="Veille"
     question="Qu’est-ce qui tourne en arrière-plan pour me surveiller ?"
-    intro="Ici vous voyez les routines OSINT configurées. En Phase 1/2, elles sont planifiées mais n'émettent aucune requête réseau réelle."
+    intro="Ici vous voyez les routines OSINT configurées. Elles peuvent exécuter des scripts locaux ou des simulations."
   />
 
   {#if loading}
@@ -121,6 +123,16 @@
               <dt>Prochaine exécution</dt>
               <dd>{selected.next_run ?? 'Non planifiée'}</dd>
             </div>
+            <div class="field full-width">
+              <dt>Script local</dt>
+              <dd class="mono">
+                {#if selected.script_path}
+                  {selected.script_path} {selected.script_args ?? ''}
+                {:else}
+                  Aucun script configuré (simulation)
+                {/if}
+              </dd>
+            </div>
           </div>
 
           <div class="actions-section">
@@ -137,7 +149,7 @@
               </div>
             {/if}
             <p class="muted" style="margin-top: 0.75rem;">
-              Note : En Phase 4, cette action interrogera de vraies APIs OSINT de manière sécurisée.
+              Note : Si un script est configuré, MANTIS l'exécutera localement et affichera sa sortie standard.
             </p>
           </div>
 
@@ -159,6 +171,7 @@
 <style>
   .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
   .error { color: var(--mantis-danger); font-size: 0.85rem; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
 
   .split-layout {
     display: grid;
@@ -251,6 +264,10 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
+  }
+
+  .field.full-width {
+    grid-column: 1 / -1;
   }
 
   @media (max-width: 700px) {

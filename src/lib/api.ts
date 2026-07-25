@@ -85,6 +85,8 @@ export interface OsintModule {
   status: string;
   last_run: string | null;
   next_run: string | null;
+  script_path: string | null;
+  script_args: string | null;
 }
 
 export interface PostureScore {

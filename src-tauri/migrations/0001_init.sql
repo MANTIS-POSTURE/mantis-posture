@@ -144,6 +144,8 @@ CREATE TABLE IF NOT EXISTS osint_modules (
     status TEXT NOT NULL CHECK(status IN ('planifie', 'actif', 'erreur', 'desactive')),
     last_run TEXT,
     next_run TEXT,
+    script_path TEXT, -- Path to executable or script (e.g., python, bash, ./tools/holehe)
+    script_args TEXT, -- Arguments for the script (e.g., scripts/check_breaches.py)
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

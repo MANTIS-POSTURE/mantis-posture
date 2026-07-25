@@ -104,6 +104,8 @@ struct OsintModule {
     status: String,
     last_run: Option<String>,
     next_run: Option<String>,
+    script_path: Option<String>,
+    script_args: Option<String>,
 }
 
 const MIGRATION_SQL: &str = include_str!("../migrations/0001_init.sql");
@@ -119,7 +121,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
     // Check schema version
     let user_version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0)).unwrap_or(0);
     
-    if user_version < 2 {
+    if user_version < 3 {
         // Drop all existing tables to ensure clean state for this migration
         conn.execute_batch("
             DROP TABLE IF EXISTS folder_identity;
@@ -146,7 +148,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
         conn.execute_batch(MIGRATION_SQL).map_err(|e| e.to_string())?;
         
         // Update schema version
-        conn.execute("PRAGMA user_version = 2", []).map_err(|e| e.to_string())?;
+        conn.execute("PRAGMA user_version = 3", []).map_err(|e| e.to_string())?;
     }
 
     // Seed data if empty
@@ -267,16 +269,16 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
 
         // Seed OSINT Modules
         conn.execute(
-            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params!["osint-breaches", "Vérification fuites (e-mails)", "Vérifie les e-mails du dossier Personnel dans les bases de fuites publiques.", "email", "Hebdomadaire", "planifie", None::<&str>, "Phase 4"]
+            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["osint-breaches", "Vérification fuites (e-mails)", "Vérifie les e-mails du dossier Personnel dans les bases de fuites publiques.", "email", "Hebdomadaire", "planifie", None::<&str>, "Phase 4", "python", "scripts/check_breaches.py"]
         ).map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params!["osint-search", "Mentions publiques (nom + pseudo)", "Recherche les mentions du nom et des pseudos sur les moteurs de recherche.", "nom", "Mensuelle", "planifie", None::<&str>, "Phase 4"]
+            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["osint-search", "Mentions publiques (nom + pseudo)", "Recherche les mentions du nom et des pseudos sur les moteurs de recherche.", "nom", "Mensuelle", "planifie", None::<&str>, "Phase 4", None::<&str>, None::<&str>]
         ).map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params!["osint-address", "Exposition adresse (annuaires)", "Vérifie si les adresses connues apparaissent dans des annuaires publics.", "adresse", "Trimestrielle", "desactive", None::<&str>, None::<&str>]
+            "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params!["osint-address", "Exposition adresse (annuaires)", "Vérifie si les adresses connues apparaissent dans des annuaires publics.", "adresse", "Trimestrielle", "desactive", None::<&str>, None::<&str>, None::<&str>, None::<&str>]
         ).map_err(|e| e.to_string())?;
     }
 
@@ -547,7 +549,7 @@ fn list_timeline_entries(app: tauri::AppHandle) -> Result<Vec<TimelineEntry>, St
 fn list_osint_modules(app: tauri::AppHandle) -> Result<Vec<OsintModule>, String> {
     let conn = get_db_connection(&app)?;
     
-    let mut stmt = conn.prepare("SELECT id, name, description, target_kind, frequency, status, last_run, next_run FROM osint_modules").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args FROM osint_modules").map_err(|e| e.to_string())?;
     let module_iter = stmt.query_map([], |row| {
         Ok(OsintModule {
             id: row.get(0)?,
@@ -558,6 +560,8 @@ fn list_osint_modules(app: tauri::AppHandle) -> Result<Vec<OsintModule>, String>
             status: row.get(5)?,
             last_run: row.get(6)?,
             next_run: row.get(7)?,
+            script_path: row.get(8)?,
+            script_args: row.get(9)?,
         })
     }).map_err(|e| e.to_string())?;
 
@@ -657,61 +661,113 @@ fn update_rgpd_request_status(app: tauri::AppHandle, request_id: String, status_
 fn run_osint_module(app: tauri::AppHandle, module_id: String) -> Result<String, String> {
     let conn = get_db_connection(&app)?;
     
-    // Update last_run
-    conn.execute(
-        "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
-        params![module_id]
+    // Fetch module details
+    let module = conn.query_row(
+        "SELECT id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args FROM osint_modules WHERE id = ?1",
+        params![module_id],
+        |row| {
+            Ok(OsintModule {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                description: row.get(2)?,
+                target_kind: row.get(3)?,
+                frequency: row.get(4)?,
+                status: row.get(5)?,
+                last_run: row.get(6)?,
+                next_run: row.get(7)?,
+                script_path: row.get(8)?,
+                script_args: row.get(9)?,
+            })
+        }
     ).map_err(|e| e.to_string())?;
 
-    let mut summary = String::new();
+    if let Some(script_path) = module.script_path {
+        let args: Vec<String> = if let Some(args_str) = module.script_args {
+            args_str.split_whitespace().map(|s| s.to_string()).collect()
+        } else {
+            vec![]
+        };
+        
+        let output = std::process::Command::new(&script_path)
+            .args(&args)
+            .output()
+            .map_err(|e| format!("Failed to execute script '{}': {}", script_path, e))?;
 
-    if module_id == "osint-breaches" {
-        // Simulate checking emails
-        let mut stmt = conn.prepare("SELECT id, value FROM identities WHERE kind = 'email'").map_err(|e| e.to_string())?;
-        let email_iter = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        }).map_err(|e| e.to_string())?;
-
-        for email_res in email_iter {
-            let (_id, email) = email_res.map_err(|e| e.to_string())?;
-            
-            // Simulated logic: if it's our test email, we "find" a leak
-            if email == "alex.martin.perso@example.com" {
-                let exp_id = Uuid::new_v4().to_string();
-                conn.execute(
-                    "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), ?6, ?7, ?8, ?9)",
-                    params![
-                        exp_id,
-                        "Fuite simulée (Module OSINT)",
-                        "fuite",
-                        "modérée",
-                        "nouvelle",
-                        "Module OSINT local",
-                        "Une fuite a été détectée par le module de veille simulé.",
-                        "Détection automatique.",
-                        "folder-perso"
-                    ]
-                ).map_err(|e| e.to_string())?;
-                
-                // Add timeline entry
-                let tl_id = Uuid::new_v4().to_string();
-                conn.execute(
-                    "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, datetime('now'))",
-                    params![tl_id, "Détection OSINT", format!("Fuite simulée trouvée pour {}", email)]
-                ).map_err(|e| e.to_string())?;
-
-                summary.push_str(&format!("Fuite trouvée pour {}.\n", email));
-            }
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            // Update last_run and status
+            conn.execute(
+                "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
+                params![module_id]
+            ).map_err(|e| e.to_string())?;
+            Ok(stdout)
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            // Update status to error
+            conn.execute(
+                "UPDATE osint_modules SET status = 'erreur' WHERE id = ?1",
+                params![module_id]
+            ).map_err(|e| e.to_string())?;
+            Err(format!("Script error: {}", stderr))
         }
     } else {
-        summary.push_str("Module exécuté (simulation).\n");
-    }
+        // Fallback to simulation if no script is defined
+        // Update last_run
+        conn.execute(
+            "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
+            params![module_id]
+        ).map_err(|e| e.to_string())?;
 
-    if summary.is_empty() {
-        summary = "Aucune nouvelle exposition détectée.".to_string();
-    }
+        let mut summary = String::new();
 
-    Ok(summary)
+        if module_id == "osint-breaches" {
+            // Simulate checking emails
+            let mut stmt = conn.prepare("SELECT id, value FROM identities WHERE kind = 'email'").map_err(|e| e.to_string())?;
+            let email_iter = stmt.query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            }).map_err(|e| e.to_string())?;
+
+            for email_res in email_iter {
+                let (_id, email) = email_res.map_err(|e| e.to_string())?;
+                
+                // Simulated logic: if it's our test email, we "find" a leak
+                if email == "alex.martin.perso@example.com" {
+                    let exp_id = Uuid::new_v4().to_string();
+                    conn.execute(
+                        "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), ?6, ?7, ?8, ?9)",
+                        params![
+                            exp_id,
+                            "Fuite simulée (Module OSINT)",
+                            "fuite",
+                            "modérée",
+                            "nouvelle",
+                            "Module OSINT local",
+                            "Une fuite a été détectée par le module de veille simulé.",
+                            "Détection automatique.",
+                            "folder-perso"
+                        ]
+                    ).map_err(|e| e.to_string())?;
+                    
+                    // Add timeline entry
+                    let tl_id = Uuid::new_v4().to_string();
+                    conn.execute(
+                        "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, datetime('now'))",
+                        params![tl_id, "Détection OSINT", format!("Fuite simulée trouvée pour {}", email)]
+                    ).map_err(|e| e.to_string())?;
+
+                    summary.push_str(&format!("Fuite trouvée pour {}.\n", email));
+                }
+            }
+        } else {
+            summary.push_str("Module exécuté (simulation).\n");
+        }
+
+        if summary.is_empty() {
+            summary = "Aucune nouvelle exposition détectée.".to_string();
+        }
+
+        Ok(summary)
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

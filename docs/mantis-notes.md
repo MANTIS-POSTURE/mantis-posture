@@ -77,6 +77,13 @@
 - **Frontend API** : Ajout de `runOsintModule`.
 - **UI Veille** : Ajout d'un bouton "Lancer la routine" dans le panneau de détail. Affichage du résultat de l'exécution.
 
+### Étape 12 : Intégration de scripts OSINT locaux
+- **Schéma SQL** : Ajout des colonnes `script_path` et `script_args` à la table `osint_modules`. Bump du schema version à 3.
+- **Backend Rust** : La commande `run_osint_module` vérifie si `script_path` est défini. Si oui, elle exécute le script via `std::process::Command`, capture stdout et le retourne. Si le script échoue, elle capture stderr et met le statut du module à 'erreur'. Si aucun script n'est défini, elle conserve la simulation.
+- **Seed Data** : Le module `osint-breaches` est configuré avec `script_path='python'` et `script_args='scripts/check_breaches.py'` (simulation d'appel à un outil CLI).
+- **Frontend API** : Mise à jour de l'interface `OsintModule` avec `script_path` et `script_args`.
+- **UI Veille** : Affichage du script configuré dans le panneau de détail.
+
 ### Réflexion OSINT & Privacy (pour la suite)
 - **Adresses** : Permettra de croiser avec des annuaires publics, des fuites de bases immobilières, ou des registres de sociétés.
 - **Pseudos passés** : Important pour tracker l'évolution d'identité (ajouter un champ "ancien pseudo" ou gérer via les notes/relations).
