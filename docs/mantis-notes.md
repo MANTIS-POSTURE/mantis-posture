@@ -31,8 +31,14 @@
 - Affichage des détails (Quoi, Pourquoi, Source, Sévérité, Statut).
 - Lien vers les incidents associés.
 
+### Étape 5 : Migration de la vue Actions (`/actions`)
+- Branchement sur `listActions`.
+- Application du design split-layout avec `glass-card`.
+- Affichage des détails (Priorité, Difficulté, Échéance, Étapes, Preuve attendue).
+- Lien vers l'incident associé.
+- Parsing du JSON `guidance` pour afficher les étapes numérotées.
+
 ### Prochaines étapes
-- [ ] Migrer `/actions` sur SQLite et design glass-card.
 - [ ] Migrer `/dossiers` et `/identites` sur SQLite.
 - [ ] Migrer `/dpo` sur SQLite.
 - [ ] Débloquer l'édition (CRUD) pour les identités et dossiers.
