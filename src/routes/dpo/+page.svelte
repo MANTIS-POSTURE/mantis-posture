@@ -1,202 +1,346 @@
-﻿<script lang="ts">
-	import { page } from '$app/stores';
-	import '$lib/workflow.css';
-	import GuideHeader from '$lib/GuideHeader.svelte';
-	import NextStepBar from '$lib/NextStepBar.svelte';
-	import ReadOnlyField from '$lib/ReadOnlyField.svelte';
-	import {
-		rgpdRequests as seed,
-		rgpdTypeLabel,
-		getIncident,
-		getAction,
-		type RgpdRequest,
-		type RgpdStatus
-	} from '$lib/mock/posture';
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import '$lib/workflow.css';
+  import GuideHeader from '$lib/GuideHeader.svelte';
+  import { listRgpdRequests, type RgpdRequest } from '$lib/api';
 
-	let requests = $state<RgpdRequest[]>(seed.map((r) => ({ ...r })));
-	let copied = $state(false);
+  let requests = $state<RgpdRequest[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let copied = $state(false);
 
-	const selectedId = $derived($page.url.searchParams.get('id') ?? requests[0]?.id ?? null);
-	const selected = $derived(requests.find((r) => r.id === selectedId));
+  // Local state for status updates (not persisted yet)
+  let localStatuses = $state<Record<string, string>>({});
 
-	function setStatus(id: string, status: RgpdStatus) {
-		requests = requests.map((r) => (r.id === id ? { ...r, status } : r));
-	}
+  onMount(async () => {
+    try {
+      const data = await listRgpdRequests();
+      requests = data;
+      // Initialize local statuses from fetched data
+      localStatuses = data.reduce((acc, r) => {
+        acc[r.id] = r.status_id;
+        return acc;
+      }, {} as Record<string, string>);
+    } catch (e) {
+      error = String(e);
+    } finally {
+      loading = false;
+    }
+  });
 
-	async function copyDraft(text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-			copied = true;
-			setTimeout(() => {
-				copied = false;
-			}, 2000);
-		} catch {
-			/* clipboard may be unavailable outside secure context */
-		}
-	}
+  const selectedId = $derived($page.url.searchParams.get('id') ?? requests[0]?.id ?? null);
+  const selected = $derived(requests.find((r) => r.id === selectedId));
 
-	const nextHint = $derived(
-		!selected
-			? ''
-			: selected.status === 'brouillon'
-				? 'Vérifiez le brouillon, puis marquez la demande comme prête.'
-				: selected.status === 'prete'
-					? 'Copiez le brouillon, envoyez-le vous-même, puis indiquez que c’est envoyé.'
-					: 'Demande suivie. Aucun envoi automatique depuis MANTIS.'
-	);
+  function getTypeLabel(typeId: string): string {
+    switch (typeId) {
+      case 'type_001': return 'Accès';
+      case 'type_002': return 'Rectification';
+      case 'type_003': return 'Effacement';
+      case 'type_004': return 'Opposition';
+      case 'type_005': return 'Déréférencement';
+      default: return typeId;
+    }
+  }
+
+  function getStatusLabel(statusId: string): string {
+    switch (statusId) {
+      case 'status_001': return 'Brouillon';
+      case 'status_002': return 'Prête à envoyer';
+      case 'status_003': return 'Envoyée';
+      case 'status_004': return 'Répondue';
+      default: return statusId;
+    }
+  }
+
+  function getStatusColor(statusId: string): string {
+    switch (statusId) {
+      case 'status_002': return 'var(--mantis-warn)';
+      case 'status_003': return 'var(--mantis-accent)';
+      case 'status_004': return 'var(--mantis-ok)';
+      default: return 'var(--mantis-text-muted)';
+    }
+  }
+
+  function setStatus(id: string, status: string) {
+    localStatuses = { ...localStatuses, [id]: status };
+  }
+
+  async function copyDraft(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+      setTimeout(() => {
+        copied = false;
+      }, 2000);
+    } catch {
+      /* clipboard may be unavailable outside secure context */
+    }
+  }
+
+  const currentStatus = $derived(selected ? localStatuses[selected.id] ?? selected.status_id : '');
 </script>
 
 <section class="wf-view">
-	<GuideHeader
-		title="DPO / RGPD"
-		question="Comment préparer ma demande de droits, sans me tromper ?"
-		intro="MANTIS prépare le texte et le suivi. Vous seul envoyez la demande (mail, formulaire ou courrier)."
-	/>
+  <GuideHeader
+    title="DPO / RGPD"
+    question="Comment préparer ma demande de droits, sans me tromper ?"
+    intro="MANTIS prépare le texte et le suivi. Vous seul envoyez la demande (mail, formulaire ou courrier)."
+  />
 
-	<div class="wf-grid wf-split">
-		<div class="wf-panel">
-			<h2>Démarches</h2>
-			<ul class="wf-list">
-				{#each requests as req (req.id)}
-					<li>
-						<a
-							class="wf-row"
-							class:active={selectedId === req.id}
-							href={`/dpo?id=${req.id}`}
-						>
-							<span>
-								<span class="wf-badge">{rgpdTypeLabel[req.type]}</span>
-								<span class="wf-title" style="display:block;margin-top:0.35rem"
-									>{req.target}</span
-								>
-								<p class="wf-desc">{req.status} · {req.createdAt}</p>
-							</span>
-						</a>
-					</li>
-				{/each}
-			</ul>
-		</div>
+  {#if loading}
+    <div class="glass-card"><p class="muted">Chargement des demandes...</p></div>
+  {:else if error}
+    <div class="glass-card"><p class="error">Erreur: {error}</p></div>
+  {:else if requests.length === 0}
+    <div class="glass-card"><p class="muted">Aucune demande RGPD enregistrée.</p></div>
+  {:else}
+    <div class="split-layout">
+      <!-- Liste des demandes -->
+      <div class="glass-card list-panel">
+        <h2>Démarches</h2>
+        <ul class="item-list">
+          {#each requests as req (req.id)}
+            <li>
+              <a class="list-item" class:active={selectedId === req.id} href={`/dpo?id=${req.id}`}>
+                <div class="item-header">
+                  <span class="item-title">{req.target}</span>
+                  <span class="badge" style={`color: ${getStatusColor(localStatuses[req.id] ?? req.status_id)}; border-color: ${getStatusColor(localStatuses[req.id] ?? req.status_id)};`}>
+                    {getStatusLabel(localStatuses[req.id] ?? req.status_id)}
+                  </span>
+                </div>
+                <p class="item-desc">{getTypeLabel(req.type_id)}</p>
+              </a>
+            </li>
+          {/each}
+        </ul>
+      </div>
 
-		<div class="wf-panel wf-detail">
-			{#if selected}
-				<h3>{rgpdTypeLabel[selected.type]} — {selected.target}</h3>
-				<p class="wf-summary">
-					Étapes : vérifier la cible → copier le brouillon → envoyer vous-même → noter
-					l’envoi ici.
-				</p>
+      <!-- Détail de la demande -->
+      <div class="glass-card detail-panel">
+        {#if selected}
+          <div class="detail-header">
+            <h3>{getTypeLabel(selected.type_id)} — {selected.target}</h3>
+          </div>
+          
+          <p class="summary">
+            Étapes : vérifier la cible → copier le brouillon → envoyer vous-même → noter l’envoi ici.
+          </p>
+          
+          <div class="detail-grid">
+            <div class="field">
+              <dt>Organisation cible</dt>
+              <dd>{selected.target}</dd>
+            </div>
+            <div class="field">
+              <dt>Contact DPO / privacy</dt>
+              <dd>{selected.dpo_contact}</dd>
+            </div>
+            <div class="field">
+              <dt>Données concernées</dt>
+              <dd>{selected.data_summary}</dd>
+            </div>
+          </div>
 
-				<ReadOnlyField label="Organisation cible" value={selected.target} />
-				<ReadOnlyField
-					label="Contact DPO / privacy"
-					value={selected.dpoContact}
-					hint="E-mail non éditable pour l’instant — saisie et validation prévues en Phase 2."
-				/>
-				<ReadOnlyField
-					label="Données concernées"
-					value={`${selected.dataSummary} (${selected.identities.join(', ')})`}
-				/>
+          <div class="actions-section">
+            <h4>Aperçu du brouillon</h4>
+            <pre class="draft-preview">{selected.draft_preview}</pre>
+          </div>
 
-				<ol class="guide">
-					<li class="guide-step done">
-						<strong>1. Type</strong> — {rgpdTypeLabel[selected.type]}
-					</li>
-					<li class="guide-step done">
-						<strong>2. Cible & contact</strong> — vérifiés (lecture seule)
-					</li>
-					<li class="guide-step" class:done={selected.status !== 'brouillon'}>
-						<strong>3. Brouillon</strong> — vérifier puis copier
-					</li>
-					<li
-						class="guide-step"
-						class:done={selected.status === 'envoyee' || selected.status === 'repondue'}
-					>
-						<strong>4. Envoi</strong> — vous seul envoyez
-					</li>
-				</ol>
-
-				<div class="wf-field" style="margin-top:1rem">
-					<p class="wf-meta">Aperçu du brouillon</p>
-					<pre class="wf-draft">{selected.draftPreview}</pre>
-				</div>
-
-				{#if selected.status === 'brouillon'}
-					<NextStepBar
-						hint={nextHint}
-						primaryLabel="Marquer prête à envoyer"
-						onPrimary={() => setStatus(selected.id, 'prete')}
-					>
-						<button
-							type="button"
-							class="wf-btn"
-							onclick={() => copyDraft(selected.draftPreview)}
-						>
-							{copied ? 'Copié' : 'Copier le brouillon'}
-						</button>
-					</NextStepBar>
-				{:else if selected.status === 'prete'}
-					<NextStepBar
-						hint={nextHint}
-						primaryLabel={copied ? 'Brouillon copié' : 'Copier le brouillon'}
-						onPrimary={() => copyDraft(selected.draftPreview)}
-					>
-						<button
-							type="button"
-							class="wf-btn"
-							onclick={() => setStatus(selected.id, 'envoyee')}
-						>
-							J’ai envoyé
-						</button>
-					</NextStepBar>
-				{:else}
-					<NextStepBar hint={nextHint} primaryHref="/posture" primaryLabel="Retour au centre" />
-				{/if}
-
-				<div class="wf-secondary-links">
-					{#if selected.incidentId}
-						{@const inc = getIncident(selected.incidentId)}
-						{#if inc}
-							<a class="wf-btn" href={`/incidents?id=${inc.id}`}>Incident lié</a>
-						{/if}
-					{/if}
-					{#if selected.actionId}
-						{@const act = getAction(selected.actionId)}
-						{#if act}
-							<a class="wf-btn" href={`/actions?id=${act.id}`}>Action liée</a>
-						{/if}
-					{/if}
-				</div>
-				<p class="wf-note">Aucun envoi automatique. Aucun secret stocké.</p>
-			{:else}
-				<p class="wf-empty">Sélectionnez une démarche.</p>
-			{/if}
-		</div>
-	</div>
+          <div class="actions-section">
+            <h4>Actions</h4>
+            <div class="action-buttons">
+              <button class="wf-btn" onclick={() => copyDraft(selected.draft_preview)}>
+                {copied ? 'Copié !' : 'Copier le brouillon'}
+              </button>
+              
+              {#if currentStatus === 'status_001'}
+                <button class="wf-btn primary" onclick={() => setStatus(selected.id, 'status_002')}>
+                  Marquer prête à envoyer
+                </button>
+              {:else if currentStatus === 'status_002'}
+                <button class="wf-btn primary" onclick={() => setStatus(selected.id, 'status_003')}>
+                  J'ai envoyé
+                </button>
+              {:else if currentStatus === 'status_003'}
+                <button class="wf-btn primary" onclick={() => setStatus(selected.id, 'status_004')}>
+                  Marquer comme répondue
+                </button>
+              {/if}
+            </div>
+            <p class="muted" style="margin-top: 0.75rem;">
+              Aucun envoi automatique. Aucun secret stocké. Le changement de statut est local pour l'instant.
+            </p>
+          </div>
+        {:else}
+          <p class="muted">Sélectionnez une démarche.</p>
+        {/if}
+      </div>
+    </div>
+  {/if}
 </section>
 
 <style>
-	.guide {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		display: flex;
-		flex-direction: column;
-		gap: 0.55rem;
-	}
+  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
+  .error { color: var(--mantis-danger); font-size: 0.85rem; }
 
-	.guide-step {
-		padding: 0.65rem 0.8rem;
-		border-radius: 8px;
-		border: 1px solid var(--mantis-border);
-		font-size: 0.85rem;
-		color: var(--mantis-text-muted);
-	}
+  .split-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1.25rem;
+  }
 
-	.guide-step.done {
-		border-color: color-mix(in srgb, var(--mantis-ok) 35%, var(--mantis-border));
-		color: var(--mantis-text);
-	}
+  @media (max-width: 900px) {
+    .split-layout {
+      grid-template-columns: 1fr;
+    }
+  }
 
-	.guide-step strong {
-		color: var(--mantis-text);
-	}
+  .list-panel h2 {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .list-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.75rem;
+    border: 1px solid var(--mantis-border);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s;
+  }
+
+  .list-item:hover {
+    border-color: var(--mantis-accent);
+  }
+
+  .list-item.active {
+    border-color: var(--mantis-accent);
+    background: color-mix(in srgb, var(--mantis-accent) 10%, transparent);
+  }
+
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .item-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .item-desc {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--mantis-text-muted);
+  }
+
+  .detail-header {
+    margin-bottom: 1rem;
+  }
+
+  .detail-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .summary {
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--mantis-accent);
+    background: color-mix(in srgb, var(--mantis-accent) 5%, transparent);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 700px) {
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .field {
+    margin: 0;
+  }
+
+  .field dt {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mantis-text-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .field dd {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--mantis-text);
+  }
+
+  .actions-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--mantis-border);
+  }
+
+  .actions-section h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .draft-preview {
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--mantis-border);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    align-self: flex-start;
+  }
 </style>

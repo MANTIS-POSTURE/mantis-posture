@@ -31,12 +31,12 @@ Elle sert de guide pour les agents IA et les humains : on avance par blocs cohé
 - [x] Implémenter l'initialisation et le seed de données au démarrage.
 - [x] Créer les commandes Tauri pour lister les entités (folders, identities, exposures, incidents, actions, rgpd, timeline, score).
 - [x] Connecter le Centre de posture (`/posture`) et la vue Incidents (`/incidents`) à SQLite.
-- [ ] Connecter les vues restantes à SQLite :
+- [x] Connecter les vues restantes à SQLite :
   - [x] Expositions (`/expositions`)
-  - [ ] Actions (`/actions`)
-  - [ ] Dossiers (`/dossiers`)
-  - [ ] Identités (`/identites`)
-  - [ ] DPO (`/dpo`)
+  - [x] Actions (`/actions`)
+  - [x] Dossiers (`/dossiers`)
+  - [x] Identités (`/identites`)
+  - [x] DPO (`/dpo`)
 - [ ] Débloquer l'édition des champs (CRUD complet).
 
 **Résultat attendu :**

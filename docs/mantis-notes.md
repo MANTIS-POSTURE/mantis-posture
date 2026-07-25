@@ -44,6 +44,13 @@
 - Application du design split-layout avec `glass-card`.
 - Filtrage des entités liées par `folder_id`.
 
+### Étape 7 : Migration de la vue DPO (`/dpo`)
+- Branchement sur `listRgpdRequests`.
+- Application du design split-layout avec `glass-card`.
+- Affichage des détails (Cible, Contact DPO, Type, Statut, Résumé, Brouillon).
+- Bouton de copie du brouillon.
+- Mise à jour locale du statut (non persisté en base pour l'instant).
+
 ### Prochaines étapes
-- [ ] Migrer `/dpo` sur SQLite.
 - [ ] Débloquer l'édition (CRUD) pour les identités et dossiers.
+- [ ] Persister les changements de statut des actions et demandes RGPD.
