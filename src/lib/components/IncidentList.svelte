@@ -2,10 +2,10 @@
   import { onMount } from 'svelte';
   import { listIncidents, listActions, type Incident, type Action } from '$lib/api';
 
-  let incidents: Incident[] = [];
-  let actions: Action[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let incidents = $state<Incident[]>([]);
+  let actions = $state<Action[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {

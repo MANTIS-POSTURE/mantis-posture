@@ -2,9 +2,9 @@
   import { onMount } from 'svelte';
   import { getPostureScore, type PostureScore } from '$lib/api';
 
-  let scoreData: PostureScore | null = null;
-  let loading = true;
-  let error: string | null = null;
+  let scoreData = $state<PostureScore | null>(null);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {

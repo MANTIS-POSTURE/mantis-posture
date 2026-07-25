@@ -2,9 +2,9 @@
   import { onMount } from 'svelte';
   import { listTimelineEntries, type TimelineEntry } from '$lib/api';
 
-  let entries: TimelineEntry[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let entries = $state<TimelineEntry[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {

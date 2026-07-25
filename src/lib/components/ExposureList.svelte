@@ -2,9 +2,9 @@
   import { onMount } from 'svelte';
   import { listExposures, type Exposure } from '$lib/api';
 
-  let exposures: Exposure[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let exposures = $state<Exposure[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   onMount(async () => {
     try {
