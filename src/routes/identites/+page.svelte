@@ -3,13 +3,24 @@
   import { page } from '$app/stores';
   import '$lib/workflow.css';
   import GuideHeader from '$lib/GuideHeader.svelte';
-  import { listIdentities, listFolders, listExposures, type Identity, type Folder, type Exposure } from '$lib/api';
+  import { listIdentities, listFolders, listExposures, createIdentity, updateIdentity, deleteIdentity, type Identity, type Folder, type Exposure } from '$lib/api';
 
   let identities = $state<Identity[]>([]);
   let folders = $state<Folder[]>([]);
   let exposures = $state<Exposure[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
+
+  // Form state
+  let mode = $state<'view' | 'edit' | 'create'>('view');
+  let formData = $state({
+    id: '',
+    label: '',
+    kind: 'email',
+    value: '',
+    folder_id: '' as string | null,
+    notes: ''
+  });
 
   onMount(async () => {
     try {
@@ -28,6 +39,19 @@
   const selectedId = $derived($page.url.searchParams.get('id') ?? identities[0]?.id ?? null);
   const selected = $derived(identities.find((i) => i.id === selectedId));
 
+  $effect(() => {
+    if (selected && mode !== 'edit' && mode !== 'create') {
+      formData = {
+        id: selected.id,
+        label: selected.label,
+        kind: selected.kind,
+        value: selected.value,
+        folder_id: selected.folder_id,
+        notes: selected.notes ?? ''
+      };
+    }
+  });
+
   function getFolderName(folderId: string | null): string {
     if (!folderId) return 'Aucun dossier';
     return folders.find(f => f.id === folderId)?.name ?? 'Inconnu';
@@ -35,9 +59,97 @@
 
   function exposuresForIdentity(identity: Identity | undefined): Exposure[] {
     if (!identity || !identity.folder_id) return [];
-    // Note: Since exposures don't link directly to identity_id in the current schema,
-    // we show exposures in the same folder as the identity.
     return exposures.filter(e => e.folder_id === identity.folder_id);
+  }
+
+  function startCreate() {
+    mode = 'create';
+    formData = {
+      id: '',
+      label: '',
+      kind: 'email',
+      value: '',
+      folder_id: folders[0]?.id ?? null,
+      notes: ''
+    };
+  }
+
+  function startEdit() {
+    if (!selected) return;
+    mode = 'edit';
+    formData = {
+      id: selected.id,
+      label: selected.label,
+      kind: selected.kind,
+      value: selected.value,
+      folder_id: selected.folder_id,
+      notes: selected.notes ?? ''
+    };
+  }
+
+  function cancelEdit() {
+    mode = 'view';
+    if (selected) {
+      formData = {
+        id: selected.id,
+        label: selected.label,
+        kind: selected.kind,
+        value: selected.value,
+        folder_id: selected.folder_id,
+        notes: selected.notes ?? ''
+      };
+    }
+  }
+
+  async function saveIdentity() {
+    try {
+      if (mode === 'create') {
+        const newIdentity = await createIdentity(
+          formData.label,
+          formData.kind,
+          formData.value,
+          formData.folder_id || null,
+          formData.notes || null
+        );
+        identities = [...identities, newIdentity];
+        // Select the new identity
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('id', newIdentity.id);
+        window.history.pushState({}, '', newUrl);
+        mode = 'view';
+      } else if (mode === 'edit') {
+        await updateIdentity(
+          formData.id,
+          formData.label,
+          formData.kind,
+          formData.value,
+          formData.folder_id || null,
+          formData.notes || null
+        );
+        identities = identities.map(i => 
+          i.id === formData.id 
+            ? { ...i, ...formData, folder_id: formData.folder_id || null, notes: formData.notes || null }
+            : i
+        );
+        mode = 'view';
+      }
+    } catch (e) {
+      error = String(e);
+    }
+  }
+
+  async function removeIdentity(id: string) {
+    if (!confirm('Supprimer cette identité ?')) return;
+    try {
+      await deleteIdentity(id);
+      identities = identities.filter(i => i.id !== id);
+      // Clear selection if deleted
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('id');
+      window.history.pushState({}, '', newUrl);
+    } catch (e) {
+      error = String(e);
+    }
   }
 </script>
 
@@ -52,12 +164,13 @@
     <div class="glass-card"><p class="muted">Chargement des identités...</p></div>
   {:else if error}
     <div class="glass-card"><p class="error">Erreur: {error}</p></div>
-  {:else if identities.length === 0}
-    <div class="glass-card"><p class="muted">Aucune identité enregistrée.</p></div>
   {:else}
     <div class="split-layout">
       <div class="glass-card list-panel">
-        <h2>Liste</h2>
+        <div class="list-header">
+          <h2>Liste</h2>
+          <button class="wf-btn primary small" onclick={startCreate}>+ Nouvelle</button>
+        </div>
         <ul class="item-list">
           {#each identities as idn (idn.id)}
             <li>
@@ -71,7 +184,7 @@
       </div>
 
       <div class="glass-card detail-panel">
-        {#if selected}
+        {#if mode === 'view' && selected}
           <div class="detail-header">
             <h3>{selected.label}</h3>
             <span class="badge">{selected.kind}</span>
@@ -106,8 +219,64 @@
               {/each}
             </ul>
           </div>
+
+          <div class="actions-section">
+            <div class="action-buttons">
+              <button class="wf-btn" onclick={startEdit}>Modifier</button>
+              <button class="wf-btn danger" onclick={() => removeIdentity(selected.id)}>Supprimer</button>
+            </div>
+          </div>
+
+        {:else if mode === 'edit' || mode === 'create'}
+          <div class="detail-header">
+            <h3>{mode === 'create' ? 'Nouvelle identité' : 'Modifier l\'identité'}</h3>
+          </div>
+
+          <form onsubmit={(e) => { e.preventDefault(); saveIdentity(); }} class="identity-form">
+            <div class="form-field">
+              <label for="label">Label</label>
+              <input id="label" type="text" bind:value={formData.label} required />
+            </div>
+
+            <div class="form-field">
+              <label for="kind">Type</label>
+              <select id="kind" bind:value={formData.kind}>
+                <option value="nom">Nom</option>
+                <option value="email">E-mail</option>
+                <option value="telephone">Téléphone</option>
+                <option value="pseudo">Pseudo</option>
+                <option value="domaine">Domaine</option>
+                <option value="url">URL / Profil</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="value">Valeur</label>
+              <input id="value" type="text" bind:value={formData.value} required />
+            </div>
+
+            <div class="form-field">
+              <label for="folder_id">Dossier</label>
+              <select id="folder_id" bind:value={formData.folder_id}>
+                <option value="">Aucun dossier</option>
+                {#each folders as folder (folder.id)}
+                  <option value={folder.id}>{folder.name}</option>
+                {/each}
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="notes">Notes</label>
+              <textarea id="notes" bind:value={formData.notes}></textarea>
+            </div>
+
+            <div class="action-buttons">
+              <button type="submit" class="wf-btn primary">Enregistrer</button>
+              <button type="button" class="wf-btn" onclick={cancelEdit}>Annuler</button>
+            </div>
+          </form>
         {:else}
-          <p class="muted">Sélectionnez une identité.</p>
+          <p class="muted">Sélectionnez une identité ou créez-en une nouvelle.</p>
         {/if}
       </div>
     </div>
@@ -131,9 +300,16 @@
   }
 
   .list-panel h2 {
-    margin: 0 0 1rem;
+    margin: 0;
     font-size: 0.95rem;
     font-weight: 600;
+  }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
   }
 
   .item-list {
@@ -279,5 +455,67 @@
     font-weight: 600;
     text-transform: uppercase;
     align-self: flex-start;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .wf-btn.danger {
+    background: var(--mantis-danger);
+    border-color: var(--mantis-danger);
+    color: #fff;
+  }
+
+  .wf-btn.small {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  /* Form styles */
+  .identity-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-field label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mantis-text-muted);
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    background: var(--mantis-bg);
+    border: 1px solid var(--mantis-border-strong);
+    border-radius: 6px;
+    color: var(--mantis-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus {
+    outline: none;
+    border-color: var(--mantis-accent);
+  }
+
+  .form-field textarea {
+    min-height: 80px;
+    resize: vertical;
   }
 </style>

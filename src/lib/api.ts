@@ -117,3 +117,15 @@ export async function updateActionStatus(id: string, status: string): Promise<vo
 export async function updateRgpdRequestStatus(id: string, statusId: string): Promise<void> {
   await invoke('update_rgpd_request_status', { requestId: id, statusId });
 }
+
+export async function createIdentity(label: string, kind: string, value: string, folderId: string | null, notes: string | null): Promise<Identity> {
+  return await invoke<Identity>('create_identity', { label, kind, value, folderId, notes });
+}
+
+export async function updateIdentity(id: string, label: string, kind: string, value: string, folderId: string | null, notes: string | null): Promise<void> {
+  await invoke('update_identity', { id, label, kind, value, folderId, notes });
+}
+
+export async function deleteIdentity(id: string): Promise<void> {
+  await invoke('delete_identity', { id });
+}

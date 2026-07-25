@@ -1,6 +1,7 @@
 use rusqlite::{Connection, params};
 use serde::Serialize;
 use tauri::Manager;
+use uuid::Uuid;
 
 #[derive(Serialize)]
 struct Folder {
@@ -9,7 +10,7 @@ struct Folder {
     context: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Incident {
     id: String,
     title: String,
@@ -23,7 +24,7 @@ struct Incident {
     folder_id: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Action {
     id: String,
     title: String,
@@ -37,7 +38,7 @@ struct Action {
     incident_id: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Identity {
     id: String,
     label: String,
@@ -47,7 +48,7 @@ struct Identity {
     notes: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Exposure {
     id: String,
     title: String,
@@ -61,7 +62,7 @@ struct Exposure {
     folder_id: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct RgpdRequest {
     id: String,
     type_id: String,
@@ -358,6 +359,43 @@ fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
 }
 
 #[tauri::command]
+fn create_identity(app: tauri::AppHandle, label: String, kind: String, value: String, folder_id: Option<String>, notes: Option<String>) -> Result<Identity, String> {
+    let conn = get_db_connection(&app)?;
+    let id = Uuid::new_v4().to_string();
+    
+    conn.execute(
+        "INSERT INTO identities (id, label, kind, value, folder_id, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![id, label, kind, value, folder_id, notes]
+    ).map_err(|e| e.to_string())?;
+
+    Ok(Identity {
+        id,
+        label,
+        kind,
+        value,
+        folder_id,
+        notes,
+    })
+}
+
+#[tauri::command]
+fn update_identity(app: tauri::AppHandle, id: String, label: String, kind: String, value: String, folder_id: Option<String>, notes: Option<String>) -> Result<(), String> {
+    let conn = get_db_connection(&app)?;
+    conn.execute(
+        "UPDATE identities SET label = ?1, kind = ?2, value = ?3, folder_id = ?4, notes = ?5, updated_at = datetime('now') WHERE id = ?6",
+        params![label, kind, value, folder_id, notes, id]
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_identity(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let conn = get_db_connection(&app)?;
+    conn.execute("DELETE FROM identities WHERE id = ?1", params![id]).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn list_exposures(app: tauri::AppHandle) -> Result<Vec<Exposure>, String> {
     let conn = get_db_connection(&app)?;
     
@@ -534,7 +572,10 @@ pub fn run() {
             list_timeline_entries,
             get_posture_score,
             update_action_status,
-            update_rgpd_request_status
+            update_rgpd_request_status,
+            create_identity,
+            update_identity,
+            delete_identity
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

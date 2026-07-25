@@ -57,6 +57,13 @@
 - Mise à jour de la vue `/actions` avec des boutons pour changer le statut (En cours, Faite) et appel à l'API.
 - Mise à jour de la vue `/dpo` pour que les boutons de changement de statut appellent l'API et persistent en base.
 
+### Étape 9 : CRUD Identités
+- Ajout de la dépendance `uuid` dans `Cargo.toml`.
+- Implémentation des commandes Rust `create_identity`, `update_identity`, `delete_identity`.
+- Ajout des fonctions API frontend correspondantes.
+- Refonte de l'UI `/identites` pour inclure un formulaire de création/édition dans le panneau de détail.
+- Gestion des modes "view" et "edit" dans la page Svelte.
+
 ### Prochaines étapes
-- [ ] Débloquer l'édition (CRUD) pour les identités et dossiers.
+- [ ] Débloquer l'édition (CRUD) pour les dossiers.
 - [ ] Ajouter la création d'incidents/expositions depuis l'UI.

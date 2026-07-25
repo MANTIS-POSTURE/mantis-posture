@@ -39,11 +39,15 @@ Elle sert de guide pour les agents IA et les humains : on avance par blocs cohé
   - [x] DPO (`/dpo`)
 - [x] Persister les changements de statut des actions et demandes RGPD.
 - [ ] Débloquer l'édition des champs (CRUD complet).
+  - [x] Identités (Créer, Éditer)
+  - [ ] Dossiers
+  - [ ] Incidents / Expositions
 
 **Résultat attendu :**
 - Une base locale cohérente.
 - Un cockpit qui manipule des données persistantes (fictives ou de test), avec un historique structuré.
 - Toutes les vues utilisent l'API SQLite réelle et le thème glassmorphism.
+- L'utilisateur peut ajouter et modifier ses propres identités.
 
 ---
 
