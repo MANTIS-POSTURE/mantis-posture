@@ -27,6 +27,25 @@ struct Action {
     incident_id: Option<i64>,
 }
 
+#[derive(Serialize)]
+struct Identity {
+    id: i64,
+    folder_id: Option<i64>,
+    identity_type: String,
+    value: String,
+    label: Option<String>,
+}
+
+#[derive(Serialize)]
+struct Exposure {
+    id: i64,
+    identity_id: Option<i64>,
+    source: String,
+    severity: String,
+    description: String,
+    detected_at: String,
+}
+
 fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
@@ -66,6 +85,31 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
         [],
     ).map_err(|e| e.to_string())?;
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS identities (
+            id INTEGER PRIMARY KEY,
+            folder_id INTEGER,
+            identity_type TEXT NOT NULL,
+            value TEXT NOT NULL,
+            label TEXT,
+            FOREIGN KEY(folder_id) REFERENCES folders(id)
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS exposures (
+            id INTEGER PRIMARY KEY,
+            identity_id INTEGER,
+            source TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            description TEXT,
+            detected_at TEXT NOT NULL,
+            FOREIGN KEY(identity_id) REFERENCES identities(id)
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
     // Seed data if empty
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0)).map_err(|e| e.to_string())?;
     if count == 0 {
@@ -85,6 +129,30 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
         conn.execute(
             "INSERT INTO actions (title, priority, status, incident_id) VALUES (?1, ?2, ?3, ?4)",
             params!["Changer le mot de passe", "Haute", "À faire", 1]
+        ).map_err(|e| e.to_string())?;
+    }
+
+    let id_count: i64 = conn.query_row("SELECT COUNT(*) FROM identities", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if id_count == 0 {
+        conn.execute(
+            "INSERT INTO identities (folder_id, identity_type, value, label) VALUES (?1, ?2, ?3, ?4)",
+            params![1, "email", "jean.dupont@example.com", "Email principal"]
+        ).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT INTO identities (folder_id, identity_type, value, label) VALUES (?1, ?2, ?3, ?4)",
+            params![1, "pseudo", "jdupont", "Pseudo générique"]
+        ).map_err(|e| e.to_string())?;
+    }
+
+    let exp_count: i64 = conn.query_row("SELECT COUNT(*) FROM exposures", [], |row| row.get(0)).map_err(|e| e.to_string())?;
+    if exp_count == 0 {
+        conn.execute(
+            "INSERT INTO exposures (identity_id, source, severity, description, detected_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![1, "Collection #1", "Élevée", "Email et mot de passe haché exposés.", "2023-10-15T12:00:00Z"]
+        ).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT INTO exposures (identity_id, source, severity, description, detected_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![2, "Forum public", "Faible", "Pseudo lié à un profil sur un forum public.", "2024-01-20T08:30:00Z"]
         ).map_err(|e| e.to_string())?;
     }
 
@@ -158,11 +226,58 @@ fn list_actions(app: tauri::AppHandle) -> Result<Vec<Action>, String> {
     Ok(actions)
 }
 
+#[tauri::command]
+fn list_identities(app: tauri::AppHandle) -> Result<Vec<Identity>, String> {
+    let conn = init_database(&app)?;
+    
+    let mut stmt = conn.prepare("SELECT id, folder_id, identity_type, value, label FROM identities").map_err(|e| e.to_string())?;
+    let identity_iter = stmt.query_map([], |row| {
+        Ok(Identity {
+            id: row.get(0)?,
+            folder_id: row.get(1)?,
+            identity_type: row.get(2)?,
+            value: row.get(3)?,
+            label: row.get(4)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut identities = Vec::new();
+    for identity in identity_iter {
+        identities.push(identity.map_err(|e| e.to_string())?);
+    }
+
+    Ok(identities)
+}
+
+#[tauri::command]
+fn list_exposures(app: tauri::AppHandle) -> Result<Vec<Exposure>, String> {
+    let conn = init_database(&app)?;
+    
+    let mut stmt = conn.prepare("SELECT id, identity_id, source, severity, description, detected_at FROM exposures").map_err(|e| e.to_string())?;
+    let exposure_iter = stmt.query_map([], |row| {
+        Ok(Exposure {
+            id: row.get(0)?,
+            identity_id: row.get(1)?,
+            source: row.get(2)?,
+            severity: row.get(3)?,
+            description: row.get(4)?,
+            detected_at: row.get(5)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut exposures = Vec::new();
+    for exposure in exposure_iter {
+        exposures.push(exposure.map_err(|e| e.to_string())?);
+    }
+
+    Ok(exposures)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![list_folders, list_incidents, list_actions])
+        .invoke_handler(tauri::generate_handler![list_folders, list_incidents, list_actions, list_identities, list_exposures])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

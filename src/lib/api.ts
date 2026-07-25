@@ -22,6 +22,23 @@ export interface Action {
   incident_id: number | null;
 }
 
+export interface Identity {
+  id: number;
+  folder_id: number | null;
+  identity_type: string;
+  value: string;
+  label: string | null;
+}
+
+export interface Exposure {
+  id: number;
+  identity_id: number | null;
+  source: string;
+  severity: string;
+  description: string;
+  detected_at: string;
+}
+
 export async function listFolders(): Promise<Folder[]> {
   return await invoke<Folder[]>('list_folders');
 }
@@ -32,4 +49,12 @@ export async function listIncidents(): Promise<Incident[]> {
 
 export async function listActions(): Promise<Action[]> {
   return await invoke<Action[]>('list_actions');
+}
+
+export async function listIdentities(): Promise<Identity[]> {
+  return await invoke<Identity[]>('list_identities');
+}
+
+export async function listExposures(): Promise<Exposure[]> {
+  return await invoke<Exposure[]>('list_exposures');
 }
