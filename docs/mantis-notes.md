@@ -84,6 +84,11 @@
 - **Frontend API** : Mise à jour de l'interface `OsintModule` avec `script_path` et `script_args`.
 - **UI Veille** : Affichage du script configuré dans le panneau de détail.
 
+### Étape 13 : Suite de vérifications OSINT native (Filtrage)
+- **Backend Rust** : Le module `osint-breaches` n'utilise plus de script externe. Il exécute nativement une suite de vérifications simulées (HIBP, Réseau social, Outil en erreur).
+- **Filtrage** : Les erreurs des outils (ex: Outil 3) sont interceptées et ignorées pour ne pas polluer l'UI. Seuls les résultats pertinents (Fuite, Profil public) créent des expositions et des entrées de chronologie.
+- **Seed Data** : Mise à jour de la description du module `osint-breaches` pour refléter la suite de checks. Suppression de `script_path` et `script_args` pour ce module.
+
 ### Réflexion OSINT & Privacy (pour la suite)
 - **Adresses** : Permettra de croiser avec des annuaires publics, des fuites de bases immobilières, ou des registres de sociétés.
 - **Pseudos passés** : Important pour tracker l'évolution d'identité (ajouter un champ "ancien pseudo" ou gérer via les notes/relations).

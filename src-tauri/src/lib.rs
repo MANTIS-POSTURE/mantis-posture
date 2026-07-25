@@ -270,7 +270,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
         // Seed OSINT Modules
         conn.execute(
             "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-            params!["osint-breaches", "Vérification fuites (e-mails)", "Vérifie les e-mails du dossier Personnel dans les bases de fuites publiques.", "email", "Hebdomadaire", "planifie", None::<&str>, "Phase 4", "python", "scripts/check_breaches.py"]
+            params!["osint-breaches", "Suite OSINT (Fuites & Profils)", "Exécute une suite de vérifications : HaveIBeenPwned, réseaux sociaux, et autres outils. Filtre les erreurs.", "email", "Hebdomadaire", "planifie", None::<&str>, "Phase 4", None::<&str>, None::<&str>]
         ).map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
@@ -657,117 +657,152 @@ fn update_rgpd_request_status(app: tauri::AppHandle, request_id: String, status_
     Ok(())
 }
 
+// --- OSINT Simulation Helpers ---
+
+fn simulate_hibp(email: &str) -> Option<String> {
+    if email == "alex.martin.perso@example.com" {
+        Some("Collection #1 (Simulé)".to_string())
+    } else {
+        None
+    }
+}
+
+fn simulate_social(email: &str) -> Option<String> {
+    if email == "alex.martin.perso@example.com" {
+        Some("https://fakesocial.com/alex (Simulé)".to_string())
+    } else {
+        None
+    }
+}
+
+fn simulate_error_tool() -> Result<String, String> {
+    Err("Connection timeout (Simulé)".to_string())
+}
+
+fn create_exposure(conn: &Connection, email: &str, kind: &str, what: &str) -> Result<(), String> {
+    let exp_id = Uuid::new_v4().to_string();
+    let (db_kind, severity) = match kind {
+        "Fuite" => ("fuite", "élevée"),
+        "Profil public" => ("profil_public", "modérée"),
+        _ => ("mention", "faible")
+    };
+    
+    conn.execute(
+        "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), ?6, ?7, ?8, ?9)",
+        params![
+            exp_id,
+            format!("{} - {}", kind, email),
+            db_kind,
+            severity,
+            "nouvelle",
+            "Suite OSINT locale",
+            what,
+            "Détection automatique par la suite de veille.",
+            "folder-perso"
+        ]
+    ).map_err(|e| e.to_string())?;
+
+    let tl_id = Uuid::new_v4().to_string();
+    conn.execute(
+        "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, datetime('now'))",
+        params![tl_id, "Détection OSINT", format!("{} pour {}", what, email)]
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[tauri::command]
 fn run_osint_module(app: tauri::AppHandle, module_id: String) -> Result<String, String> {
     let conn = get_db_connection(&app)?;
     
-    // Fetch module details
-    let module = conn.query_row(
-        "SELECT id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args FROM osint_modules WHERE id = ?1",
-        params![module_id],
-        |row| {
-            Ok(OsintModule {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                target_kind: row.get(3)?,
-                frequency: row.get(4)?,
-                status: row.get(5)?,
-                last_run: row.get(6)?,
-                next_run: row.get(7)?,
-                script_path: row.get(8)?,
-                script_args: row.get(9)?,
-            })
-        }
+    // Update last_run
+    conn.execute(
+        "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
+        params![module_id]
     ).map_err(|e| e.to_string())?;
 
-    if let Some(script_path) = module.script_path {
-        let args: Vec<String> = if let Some(args_str) = module.script_args {
-            args_str.split_whitespace().map(|s| s.to_string()).collect()
-        } else {
-            vec![]
-        };
-        
-        let output = std::process::Command::new(&script_path)
-            .args(&args)
-            .output()
-            .map_err(|e| format!("Failed to execute script '{}': {}", script_path, e))?;
+    let mut summary = String::new();
 
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            // Update last_run and status
-            conn.execute(
-                "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
-                params![module_id]
-            ).map_err(|e| e.to_string())?;
-            Ok(stdout)
-        } else {
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            // Update status to error
-            conn.execute(
-                "UPDATE osint_modules SET status = 'erreur' WHERE id = ?1",
-                params![module_id]
-            ).map_err(|e| e.to_string())?;
-            Err(format!("Script error: {}", stderr))
+    if module_id == "osint-breaches" {
+        summary.push_str("Exécution de la suite de vérifications OSINT (filtrage actif) :\n\n");
+
+        let mut stmt = conn.prepare("SELECT id, value FROM identities WHERE kind = 'email'").map_err(|e| e.to_string())?;
+        let email_iter = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        }).map_err(|e| e.to_string())?;
+
+        for email_res in email_iter {
+            let (_id, email) = email_res.map_err(|e| e.to_string())?;
+            summary.push_str(&format!("Cible : {}\n", email));
+
+            // 1. Check HaveIBeenPwned (Simulated)
+            let hibp_result = simulate_hibp(&email);
+            if let Some(breach) = hibp_result {
+                summary.push_str(&format!("  [+] Fuite détectée : {}\n", breach));
+                create_exposure(&conn, &email, "Fuite", &format!("Fuite détectée : {}", breach))?;
+            } else {
+                summary.push_str("  [-] Aucune fuite (HIBP)\n");
+            }
+
+            // 2. Check Social Network (Simulated)
+            let social_result = simulate_social(&email);
+            if let Some(profile) = social_result {
+                summary.push_str(&format!("  [+] Profil public trouvé : {}\n", profile));
+                create_exposure(&conn, &email, "Profil public", &format!("Profil trouvé : {}", profile))?;
+            } else {
+                summary.push_str("  [-] Aucun profil (Réseau social)\n");
+            }
+
+            // 3. Check Other Tool (Simulated error - filtered out)
+            let _other_result = simulate_error_tool(); 
+            summary.push_str("  [i] Outil 3 : erreur ignorée (bruit filtré)\n");
+            
+            summary.push_str("\n");
         }
+        
+        if summary.lines().count() <= 2 {
+            summary = "Aucune nouvelle exposition pertinente détectée.".to_string();
+        }
+
     } else {
-        // Fallback to simulation if no script is defined
-        // Update last_run
-        conn.execute(
-            "UPDATE osint_modules SET last_run = datetime('now'), status = 'actif' WHERE id = ?1",
-            params![module_id]
+        // Fallback for other modules or generic script execution
+        let module = conn.query_row(
+            "SELECT script_path, script_args FROM osint_modules WHERE id = ?1",
+            params![module_id],
+            |row| {
+                Ok((row.get::<_, Option<String>>(0)?, row.get::<_, Option<String>>(1)?))
+            }
         ).map_err(|e| e.to_string())?;
 
-        let mut summary = String::new();
+        if let (Some(script_path), script_args) = (module.0, module.1) {
+            let args: Vec<String> = if let Some(args_str) = script_args {
+                args_str.split_whitespace().map(|s| s.to_string()).collect()
+            } else {
+                vec![]
+            };
+            
+            let output = std::process::Command::new(&script_path)
+                .args(&args)
+                .output()
+                .map_err(|e| format!("Failed to execute script '{}': {}", script_path, e))?;
 
-        if module_id == "osint-breaches" {
-            // Simulate checking emails
-            let mut stmt = conn.prepare("SELECT id, value FROM identities WHERE kind = 'email'").map_err(|e| e.to_string())?;
-            let email_iter = stmt.query_map([], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            }).map_err(|e| e.to_string())?;
-
-            for email_res in email_iter {
-                let (_id, email) = email_res.map_err(|e| e.to_string())?;
-                
-                // Simulated logic: if it's our test email, we "find" a leak
-                if email == "alex.martin.perso@example.com" {
-                    let exp_id = Uuid::new_v4().to_string();
-                    conn.execute(
-                        "INSERT INTO exposures (id, title, kind, severity, status, discovered_at, source, what, why, folder_id) VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), ?6, ?7, ?8, ?9)",
-                        params![
-                            exp_id,
-                            "Fuite simulée (Module OSINT)",
-                            "fuite",
-                            "modérée",
-                            "nouvelle",
-                            "Module OSINT local",
-                            "Une fuite a été détectée par le module de veille simulé.",
-                            "Détection automatique.",
-                            "folder-perso"
-                        ]
-                    ).map_err(|e| e.to_string())?;
-                    
-                    // Add timeline entry
-                    let tl_id = Uuid::new_v4().to_string();
-                    conn.execute(
-                        "INSERT INTO timeline_entries (id, event_type, description, created_at) VALUES (?1, ?2, ?3, datetime('now'))",
-                        params![tl_id, "Détection OSINT", format!("Fuite simulée trouvée pour {}", email)]
-                    ).map_err(|e| e.to_string())?;
-
-                    summary.push_str(&format!("Fuite trouvée pour {}.\n", email));
-                }
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                summary = stdout;
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                conn.execute(
+                    "UPDATE osint_modules SET status = 'erreur' WHERE id = ?1",
+                    params![module_id]
+                ).map_err(|e| e.to_string())?;
+                return Err(format!("Script error: {}", stderr));
             }
         } else {
-            summary.push_str("Module exécuté (simulation).\n");
+            summary.push_str("Module exécuté (simulation générique).\n");
         }
-
-        if summary.is_empty() {
-            summary = "Aucune nouvelle exposition détectée.".to_string();
-        }
-
-        Ok(summary)
     }
+
+    Ok(summary)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
