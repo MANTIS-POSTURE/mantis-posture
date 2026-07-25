@@ -98,8 +98,37 @@ fn init_database(app: &tauri::AppHandle) -> Result<(), String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
     conn.busy_timeout(std::time::Duration::from_secs(5)).map_err(|e| e.to_string())?;
 
-    // Apply migrations
-    conn.execute_batch(MIGRATION_SQL).map_err(|e| e.to_string())?;
+    // Check schema version
+    let user_version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0)).unwrap_or(0);
+    
+    if user_version < 1 {
+        // Drop all existing tables to ensure clean state for this migration
+        conn.execute_batch("
+            DROP TABLE IF EXISTS folder_identity;
+            DROP TABLE IF EXISTS incident_rgpd;
+            DROP TABLE IF EXISTS action_rgpd;
+            DROP TABLE IF EXISTS incident_action;
+            DROP TABLE IF EXISTS exposure_incident;
+            DROP TABLE IF EXISTS timeline_entries;
+            DROP TABLE IF EXISTS rgpd_requests;
+            DROP TABLE IF EXISTS rgpd_statuses;
+            DROP TABLE IF EXISTS rgpd_types;
+            DROP TABLE IF EXISTS actions;
+            DROP TABLE IF EXISTS action_metadata;
+            DROP TABLE IF EXISTS incidents;
+            DROP TABLE IF EXISTS incident_categories;
+            DROP TABLE IF EXISTS exposures;
+            DROP TABLE IF EXISTS identities;
+            DROP TABLE IF EXISTS folders;
+            DROP TABLE IF EXISTS app_settings;
+        ").map_err(|e| e.to_string())?;
+
+        // Apply migrations
+        conn.execute_batch(MIGRATION_SQL).map_err(|e| e.to_string())?;
+        
+        // Update schema version
+        conn.execute("PRAGMA user_version = 1", []).map_err(|e| e.to_string())?;
+    }
 
     // Seed data if empty
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM folders", [], |row| row.get(0)).map_err(|e| e.to_string())?;
