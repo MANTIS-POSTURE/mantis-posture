@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import '$lib/workflow.css';
   import GuideHeader from '$lib/GuideHeader.svelte';
-  import { listRgpdRequests, type RgpdRequest } from '$lib/api';
+  import { listRgpdRequests, updateRgpdRequestStatus, type RgpdRequest } from '$lib/api';
 
   let requests = $state<RgpdRequest[]>([]);
   let loading = $state(true);
@@ -62,8 +62,13 @@
     }
   }
 
-  function setStatus(id: string, status: string) {
-    localStatuses = { ...localStatuses, [id]: status };
+  async function setStatus(id: string, status: string) {
+    try {
+      await updateRgpdRequestStatus(id, status);
+      localStatuses = { ...localStatuses, [id]: status };
+    } catch (e) {
+      error = String(e);
+    }
   }
 
   async function copyDraft(text: string) {
@@ -169,7 +174,7 @@
               {/if}
             </div>
             <p class="muted" style="margin-top: 0.75rem;">
-              Aucun envoi automatique. Aucun secret stocké. Le changement de statut est local pour l'instant.
+              Aucun envoi automatique. Aucun secret stocké. Le changement de statut est persisté localement.
             </p>
           </div>
         {:else}

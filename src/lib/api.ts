@@ -109,3 +109,11 @@ export async function listTimelineEntries(): Promise<TimelineEntry[]> {
 export async function getPostureScore(): Promise<PostureScore> {
   return await invoke<PostureScore>('get_posture_score');
 }
+
+export async function updateActionStatus(id: string, status: string): Promise<void> {
+  await invoke('update_action_status', { actionId: id, status });
+}
+
+export async function updateRgpdRequestStatus(id: string, statusId: string): Promise<void> {
+  await invoke('update_rgpd_request_status', { requestId: id, statusId });
+}

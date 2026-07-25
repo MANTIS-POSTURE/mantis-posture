@@ -37,6 +37,7 @@ Elle sert de guide pour les agents IA et les humains : on avance par blocs cohé
   - [x] Dossiers (`/dossiers`)
   - [x] Identités (`/identites`)
   - [x] DPO (`/dpo`)
+- [x] Persister les changements de statut des actions et demandes RGPD.
 - [ ] Débloquer l'édition des champs (CRUD complet).
 
 **Résultat attendu :**

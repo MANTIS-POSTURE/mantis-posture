@@ -51,6 +51,12 @@
 - Bouton de copie du brouillon.
 - Mise à jour locale du statut (non persisté en base pour l'instant).
 
+### Étape 8 : Persistance des statuts (Actions & DPO)
+- Ajout des commandes Rust `update_action_status` et `update_rgpd_request_status`.
+- Ajout des fonctions API frontend correspondantes.
+- Mise à jour de la vue `/actions` avec des boutons pour changer le statut (En cours, Faite) et appel à l'API.
+- Mise à jour de la vue `/dpo` pour que les boutons de changement de statut appellent l'API et persistent en base.
+
 ### Prochaines étapes
 - [ ] Débloquer l'édition (CRUD) pour les identités et dossiers.
-- [ ] Persister les changements de statut des actions et demandes RGPD.
+- [ ] Ajouter la création d'incidents/expositions depuis l'UI.

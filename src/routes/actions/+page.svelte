@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import '$lib/workflow.css';
   import GuideHeader from '$lib/GuideHeader.svelte';
-  import { listActions, type Action } from '$lib/api';
+  import { listActions, updateActionStatus, type Action } from '$lib/api';
 
   let actions = $state<Action[]>([]);
   let loading = $state(true);
@@ -72,6 +72,17 @@
       return JSON.parse(guidance);
     } catch {
       return [];
+    }
+  }
+
+  async function updateStatus(newStatus: string) {
+    if (!selected) return;
+    try {
+      await updateActionStatus(selected.id, newStatus);
+      // Update local state to reflect change immediately
+      actions = actions.map(a => a.id === selected.id ? { ...a, status: newStatus } : a);
+    } catch (e) {
+      error = String(e);
     }
   }
 </script>
@@ -149,6 +160,22 @@
             <div class="field">
               <dt>Preuve attendue (optionnelle)</dt>
               <dd>{selected.proof_expected}</dd>
+            </div>
+          </div>
+
+          <div class="actions-section">
+            <h4>Statut de l'action</h4>
+            <div class="action-buttons">
+              {#if selected.status !== 'en_cours' && selected.status !== 'faite'}
+                <button class="wf-btn" onclick={() => updateStatus('en_cours')}>
+                  Marquer en cours
+                </button>
+              {/if}
+              {#if selected.status !== 'faite'}
+                <button class="wf-btn primary" onclick={() => updateStatus('faite')}>
+                  Marquer comme faite
+                </button>
+              {/if}
             </div>
           </div>
 
@@ -325,6 +352,12 @@
     margin: 0 0 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .badge {

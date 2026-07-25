@@ -496,6 +496,26 @@ fn get_posture_score(app: tauri::AppHandle) -> Result<PostureScore, String> {
     })
 }
 
+#[tauri::command]
+fn update_action_status(app: tauri::AppHandle, action_id: String, status: String) -> Result<(), String> {
+    let conn = get_db_connection(&app)?;
+    conn.execute(
+        "UPDATE actions SET status = ?1, updated_at = datetime('now') WHERE id = ?2",
+        params![status, action_id]
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn update_rgpd_request_status(app: tauri::AppHandle, request_id: String, status_id: String) -> Result<(), String> {
+    let conn = get_db_connection(&app)?;
+    conn.execute(
+        "UPDATE rgpd_requests SET status_id = ?1, updated_at = datetime('now') WHERE id = ?2",
+        params![status_id, request_id]
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -512,7 +532,9 @@ pub fn run() {
             list_exposures,
             list_rgpd_requests,
             list_timeline_entries,
-            get_posture_score
+            get_posture_score,
+            update_action_status,
+            update_rgpd_request_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
