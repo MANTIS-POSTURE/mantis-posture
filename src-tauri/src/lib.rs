@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, params};
 use serde::Serialize;
 use tauri::Manager;
 
@@ -71,7 +71,7 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     if count == 0 {
         conn.execute(
             "INSERT INTO folders (name, description) VALUES (?1, ?2)",
-            ["Personnel", "Dossier personnel principal"]
+            params!["Personnel", "Dossier personnel principal"]
         ).map_err(|e| e.to_string())?;
     }
 
@@ -79,12 +79,12 @@ fn init_database(app: &tauri::AppHandle) -> Result<Connection, String> {
     if inc_count == 0 {
         conn.execute(
             "INSERT INTO incidents (title, severity, status, description) VALUES (?1, ?2, ?3, ?4)",
-            ["Fuite d'email détectée", "Élevée", "Ouvert", "Adresse email trouvée dans une base de données publique."]
+            params!["Fuite d'email détectée", "Élevée", "Ouvert", "Adresse email trouvée dans une base de données publique."]
         ).map_err(|e| e.to_string())?;
         
         conn.execute(
             "INSERT INTO actions (title, priority, status, incident_id) VALUES (?1, ?2, ?3, ?4)",
-            ["Changer le mot de passe", "Haute", "À faire", 1]
+            params!["Changer le mot de passe", "Haute", "À faire", 1]
         ).map_err(|e| e.to_string())?;
     }
 
