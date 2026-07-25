@@ -1,0 +1,188 @@
+-- 0001_init.sql
+
+-- Application settings (for future use)
+CREATE TABLE app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- Folders - containers for organizing data
+CREATE TABLE folders (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    context TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Identities - personal identifiers
+CREATE TABLE identities (
+    id TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK(kind IN ('nom', 'email', 'telephone', 'pseudo', 'domaine', 'url')),
+    value TEXT NOT NULL,
+    folder_id TEXT REFERENCES folders(id),
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Exposures - public data traces
+CREATE TABLE exposures (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK(kind IN ('profil_public', 'fuite', 'annuaire', 'mention')),
+    severity TEXT NOT NULL CHECK(severity IN ('faible', 'modérée', 'élevée', 'critique')),
+    status TEXT NOT NULL CHECK(status IN ('nouvelle', 'en_suivi', 'acceptee', 'reduite')),
+    discovered_at TEXT NOT NULL,
+    source TEXT NOT NULL,
+    what TEXT NOT NULL,
+    why TEXT NOT NULL,
+    folder_id TEXT REFERENCES folders(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Incident categories for better classification
+CREATE TABLE incident_categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Incidents - exposures requiring action
+CREATE TABLE incidents (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    severity TEXT NOT NULL CHECK(severity IN ('faible', 'modérée', 'élevée', 'critique')),
+    discovered_at TEXT NOT NULL,
+    what TEXT NOT NULL,
+    why TEXT NOT NULL,
+    impact TEXT NOT NULL,
+    confidence TEXT NOT NULL,
+    next_step TEXT NOT NULL,
+    folder_id TEXT REFERENCES folders(id),
+    category_id TEXT REFERENCES incident_categories(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Action priorities and difficulties
+CREATE TABLE action_metadata (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL CHECK(type IN ('priority', 'difficulty')),
+    value TEXT NOT NULL,
+    label TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Insert standard priorities
+INSERT INTO action_metadata (id, type, value, label) VALUES
+('prio_001', 'priority', 'basse', 'Basse'),
+('prio_002', 'priority', 'moyenne', 'Moyenne'),
+('prio_003', 'priority', 'haute', 'Haute'),
+('prio_004', 'priority', 'critique', 'Critique');
+
+-- Insert standard difficulties
+INSERT INTO action_metadata (id, type, value, label) VALUES
+('diff_001', 'difficulty', 'facile', 'Facile'),
+('diff_002', 'difficulty', 'moyenne', 'Moyenne'),
+('diff_003', 'difficulty', 'difficile', 'Difficile');
+
+-- Actions - remediation steps
+CREATE TABLE actions (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    priority_id TEXT NOT NULL REFERENCES action_metadata(id),
+    difficulty_id TEXT NOT NULL REFERENCES action_metadata(id),
+    deadline TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('a_faire', 'en_cours', 'faite')),
+    guidance TEXT NOT NULL,  -- JSON array of steps
+    proof_expected TEXT NOT NULL,
+    folder_id TEXT REFERENCES folders(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Types of RGPD requests
+CREATE TABLE rgpd_types (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK(name IN ('acces', 'rectification', 'effacement', 'opposition', 'dereferencement')),
+    label TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Insert RGPD request types
+INSERT INTO rgpd_types (id, name, label) VALUES
+('type_001', 'acces', 'Accès'),
+('type_002', 'rectification', 'Rectification'),
+('type_003', 'effacement', 'Effacement'),
+('type_004', 'opposition', 'Opposition'),
+('type_005', 'dereferencement', 'Déréférencement');
+
+-- RGPD request statuses
+CREATE TABLE rgpd_statuses (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK(name IN ('brouillon', 'prete', 'envoyee', 'repondue')),
+    label TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Insert RGPD statuses
+INSERT INTO rgpd_statuses (id, name, label) VALUES
+('status_001', 'brouillon', 'Brouillon'),
+('status_002', 'prete', 'Prête à envoyer'),
+('status_003', 'envoyee', 'Envoyée'),
+('status_004', 'repondue', 'Répondue');
+
+-- Data protection requests (RGPD)
+CREATE TABLE rgpd_requests (
+    id TEXT PRIMARY KEY,
+    type_id TEXT NOT NULL REFERENCES rgpd_types(id),
+    target TEXT NOT NULL,
+    dpo_contact TEXT NOT NULL,
+    status_id TEXT NOT NULL REFERENCES rgpd_statuses(id),
+    data_summary TEXT NOT NULL,
+    draft_preview TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Relationships between entities
+CREATE TABLE exposure_incident (
+    exposure_id TEXT REFERENCES exposures(id),
+    incident_id TEXT REFERENCES incidents(id),
+    PRIMARY KEY (exposure_id, incident_id)
+);
+
+CREATE TABLE incident_action (
+    incident_id TEXT REFERENCES incidents(id),
+    action_id TEXT REFERENCES actions(id),
+    PRIMARY KEY (incident_id, action_id)
+);
+
+CREATE TABLE action_rgpd (
+    action_id TEXT REFERENCES actions(id),
+    rgpd_id TEXT REFERENCES rgpd_requests(id),
+    PRIMARY KEY (action_id, rgpd_id)
+);
+
+CREATE TABLE incident_rgpd (
+    incident_id TEXT REFERENCES incidents(id),
+    rgpd_id TEXT REFERENCES rgpd_requests(id),
+    PRIMARY KEY (incident_id, rgpd_id)
+);
+
+CREATE TABLE folder_identity (
+    folder_id TEXT REFERENCES folders(id),
+    identity_id TEXT REFERENCES identities(id),
+    PRIMARY KEY (folder_id, identity_id)
+);
+
+-- Indexes
+CREATE INDEX idx_identities_folder ON identities(folder_id);
+CREATE INDEX idx_exposures_folder ON exposures(folder_id);
+CREATE INDEX idx_incidents_folder ON incidents(folder_id);
+CREATE INDEX idx_actions_folder ON actions(folder_id);
+CREATE INDEX idx_rgpd_requests ON rgpd_requests(status_id);

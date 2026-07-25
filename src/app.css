@@ -1,0 +1,48 @@
+/* MANTIS POSTURE — base visuelle "cockpit" (thème sombre graphite/ardoise).
+   Palette et principes alignés sur docs/mantis-product.md :
+   professionnel, sobre, orienté analyse, sans esthétique "hacker/cyberpunk".
+   Cette base sera adossée à Tailwind dans une étape ultérieure de la Phase 1. */
+
+:root {
+	/* Fonds */
+	--mantis-bg: #0e1217; /* graphite principal */
+	--mantis-bg-raised: #151b23; /* panneaux, cards */
+	--mantis-bg-sidebar: #10151c; /* colonne sidebar */
+	--mantis-border: #232c38; /* bordures discrètes */
+
+	/* Texte */
+	--mantis-text: #e6e9ee; /* texte principal */
+	--mantis-text-muted: #8b95a3; /* métadonnées, sous-texte */
+
+	/* Accents d'état (alertes, statuts) */
+	--mantis-accent: #4f8cff; /* accent neutre cockpit */
+	--mantis-ok: #3fb96c; /* OK / positif */
+	--mantis-warn: #d9a036; /* attention */
+	--mantis-danger: #d9534f; /* critique */
+
+	color-scheme: dark;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	background: var(--mantis-bg);
+	color: var(--mantis-text);
+	/* Polices système uniquement : aucun téléchargement de webfont
+	   (local-first, aucune requête réseau implicite). */
+	font-family:
+		system-ui,
+		-apple-system,
+		'Segoe UI',
+		Roboto,
+		'Helvetica Neue',
+		Arial,
+		sans-serif;
+	font-size: 14px;
+	line-height: 1.5;
+}
