@@ -81,7 +81,7 @@
 	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
 	--ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--sidebar-width: 248px;
-	--titlebar-height: 40px;
+	--titlebar-height: 48px;
 	--content-max: 1440px;
 	--content-gutter: clamp(1rem, 2vw, 2rem);
 

@@ -13318,6 +13318,15 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            // Set the native window icon explicitly so `tauri dev` uses the
+            // same logo as packaged builds and the taskbar entry.
+            let window_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/128x128.png"))
+                .map_err(|error| format!("Unable to load application icon: {error}"))?;
+            if let Some(window) = app.get_webview_window("main") {
+                window
+                    .set_icon(window_icon)
+                    .map_err(|error| format!("Unable to set application icon: {error}"))?;
+            }
             let handle = app.handle().clone();
             init_database(&handle)?;
             // Les sidecars fournis dans le bundle sont installés dans l’espace
