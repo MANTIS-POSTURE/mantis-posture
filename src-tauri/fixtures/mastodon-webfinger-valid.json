@@ -1,0 +1,16 @@
+{
+  "subject": "acct:mantis_user@social.example.test",
+  "aliases": ["https://social.example.test/@mantis_user"],
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/activity+json",
+      "href": "https://social.example.test/users/mantis_user"
+    },
+    {
+      "rel": "http://webfinger.net/rel/profile-page",
+      "type": "text/html",
+      "href": "https://social.example.test/@mantis_user"
+    }
+  ]
+}

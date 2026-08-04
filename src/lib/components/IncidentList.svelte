@@ -1,11 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listIncidents, listActions, type Incident, type Action } from '$lib/api';
+	import StatePanel from './StatePanel.svelte';
+  import { t } from '$lib/i18n';
 
   let incidents = $state<Incident[]>([]);
   let actions = $state<Action[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  const visibleIncidents = $derived(incidents.slice(0, 3));
 
   onMount(async () => {
     try {
@@ -25,7 +28,7 @@
   function getSeverityColor(sev: string): string {
     switch (sev) {
       case 'critique': return 'var(--mantis-danger)';
-      case 'élevée': return '#e67e22';
+      case 'élevée': return 'var(--ui-danger)';
       case 'modérée': return 'var(--mantis-warn)';
       default: return 'var(--mantis-text-muted)';
     }
@@ -33,29 +36,34 @@
 
   function getStatusLabel(status: string): string {
     switch (status) {
-      case 'a_faire': return 'À faire';
-      case 'en_cours': return 'En cours';
-      case 'faite': return 'Faite';
+      case 'a_faire': return t('À faire');
+      case 'en_cours': return t('En cours');
+      case 'effectue_moi': return t('Effectuée par moi');
+      case 'effectue_site': return t('Effectuée par le site');
+      case 'en_attente': return t('En attente');
+      case 'impossible': return t('Impossible');
+      case 'ignore': return t('Ignorée');
+      case 'faite': return t('Faite');
       default: return status;
     }
   }
 </script>
 
 <div class="glass-card">
-  <h2>Incidents & Actions</h2>
+  <div class="list-heading"><div><p class="eyebrow">{t('Décisions')}</p><h2>{t('Incidents et actions')}</h2></div>{#if incidents.length}<span>{incidents.length}</span>{/if}</div>
   
   {#if loading}
-    <p class="muted">Chargement...</p>
+    <StatePanel compact tone="info" title={t('Chargement des incidents')} />
   {:else if error}
-    <p class="error">Erreur: {error}</p>
+    <StatePanel compact tone="danger" title={t('Incidents indisponibles')} message={error} />
   {:else if incidents.length === 0}
-    <p class="muted">Aucun incident enregistré.</p>
+    <StatePanel compact tone="success" title={t('Aucun incident ouvert')} message={t('Les signaux nécessitant un suivi apparaîtront ici.')} />
   {:else}
     <div class="list">
-      {#each incidents as incident (incident.id)}
-        <a class="item" href={`/incidents?id=${incident.id}`}>
+      {#each visibleIncidents as incident (incident.id)}
+        <article class="item">
           <div class="item-header">
-            <h3>{incident.title}</h3>
+            <h3><a class="incident-link" href={`/incidents?id=${incident.id}`}>{incident.title}</a></h3>
             <span class="badge" style={`color: ${getSeverityColor(incident.severity)}; border-color: ${getSeverityColor(incident.severity)};`}>
               {incident.severity}
             </span>
@@ -64,7 +72,7 @@
           
           {#if getActionsForIncident(incident.id).length > 0}
             <div class="actions-section">
-              <h4>Actions requises:</h4>
+              <h4>{t('Actions requises:')}</h4>
               <ul>
                 {#each getActionsForIncident(incident.id) as action (action.id)}
                   <li>
@@ -77,16 +85,14 @@
               </ul>
             </div>
           {/if}
-        </a>
+        </article>
       {/each}
     </div>
+	<a class="list-footer" href="/incidents">{t('Voir tous les incidents →')}</a>
   {/if}
 </div>
 
 <style>
-  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
-  .error { color: var(--mantis-danger); font-size: 0.85rem; }
-
   .list {
     display: flex;
     flex-direction: column;
@@ -103,6 +109,10 @@
     color: inherit;
     transition: border-color 0.12s;
   }
+	.list-heading { display:flex; align-items:start; justify-content:space-between; gap:1rem; margin-bottom:.85rem; }.list-heading h2 { margin:.2rem 0 0; }.list-heading .eyebrow { margin:0; color:var(--ui-danger); text-transform:uppercase; }.list-heading>span { display:grid; place-items:center; min-width:28px; height:28px; border:1px solid var(--ui-border-default); border-radius:var(--radius-pill); color:var(--ui-text-secondary); font-family:var(--font-meta); font-size:.72rem; }.list-footer { display:inline-block; margin-top:.85rem; color:var(--ui-link); font-size:.78rem; font-weight:620; text-decoration:none; }
+
+  .incident-link { color: inherit; text-decoration: none; }
+  .incident-link:hover { color: var(--ui-accent); }
 
   .item:hover {
     border-color: var(--mantis-accent);

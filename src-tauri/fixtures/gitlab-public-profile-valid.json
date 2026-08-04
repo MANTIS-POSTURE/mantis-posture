@@ -1,0 +1,14 @@
+[
+  {
+    "id": 42,
+    "username": "MANTIS-user",
+    "name": "Profil de démonstration",
+    "public_email": "public@example.test",
+    "web_url": "https://gitlab.com/MANTIS-user",
+    "bio": "Profil GitLab public synthétique, uniquement destiné aux tests.",
+    "location": "Paris",
+    "organization": "MANTIS Test",
+    "job_title": "Analyste",
+    "website_url": "https://example.test"
+  }
+]

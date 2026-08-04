@@ -1,0 +1,3 @@
+# Build-only dependencies. The generated executable is the only runtime shipped to users.
+maigret==0.6.3
+pyinstaller==6.21.0

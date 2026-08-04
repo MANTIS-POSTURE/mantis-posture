@@ -1,0 +1,42 @@
+name: Bug report
+description: Signaler un comportement reproductible sans donnée sensible
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        N’incluez jamais d’identité réelle, secret, base, export, log ou preuve brute.
+  - type: input
+    id: version
+    attributes:
+      label: Version ou commit
+      placeholder: 0.1.0 ou abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction synthétique
+      description: Décrire des étapes reproductibles avec des valeurs fictives.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Résultat attendu
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Résultat observé
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environnement
+      description: Windows, version WebView/Tauri si connue, sans chemin personnel.
+    validations:
+      required: true

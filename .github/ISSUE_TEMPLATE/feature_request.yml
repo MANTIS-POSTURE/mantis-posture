@@ -1,0 +1,29 @@
+name: Feature request
+description: Proposer une capacité avec son périmètre et ses limites
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Les fonctionnalités doivent respecter le modèle local-first et la revue humaine.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème utilisateur
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: Décrire les données, permissions, réseau et objets métier touchés.
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Limites et risques
+      description: Mentionner les abus possibles, la provenance et les tests nécessaires.
+    validations:
+      required: true

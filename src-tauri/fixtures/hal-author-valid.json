@@ -1,0 +1,18 @@
+{
+  "response": {
+    "docs": [
+      {
+        "title_s": ["A bounded evidence engine"],
+        "authFullName_s": ["Alice Dupont", "Bob Martin"],
+        "uri_s": "https://hal.science/hal-01234567",
+        "producedDateY_i": 2026
+      },
+      {
+        "title_s": ["Unrelated publication"],
+        "authFullName_s": ["Alice Durand"],
+        "uri_s": "https://hal.science/hal-07654321",
+        "producedDateY_i": 2025
+      }
+    ]
+  }
+}

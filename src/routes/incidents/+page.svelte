@@ -3,23 +3,28 @@
   import { page } from '$app/stores';
   import '$lib/workflow.css';
   import GuideHeader from '$lib/GuideHeader.svelte';
+  import StatePanel from '$lib/components/StatePanel.svelte';
+  import RemediationJourney from '$lib/components/RemediationJourney.svelte';
+  import StatusBadge from '$lib/components/StatusBadge.svelte';
   import { listIncidents, listActions, type Incident, type Action } from '$lib/api';
+  import { activeIdentityId } from '$lib/active-identity';
 
   let incidents = $state<Incident[]>([]);
   let actions = $state<Action[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
-  onMount(async () => {
+  async function refresh() {
+    loading = true;
     try {
-      incidents = await listIncidents();
-      actions = await listActions();
+      [incidents, actions] = await Promise.all([listIncidents($activeIdentityId), listActions($activeIdentityId)]);
     } catch (e) {
       error = String(e);
     } finally {
       loading = false;
     }
-  });
+  }
+  onMount(() => activeIdentityId.subscribe(() => { void refresh(); }));
 
   const selectedId = $derived($page.url.searchParams.get('id') ?? incidents[0]?.id ?? null);
   const selected = $derived(incidents.find((i) => i.id === selectedId));
@@ -28,13 +33,8 @@
     return actions.filter((a) => a.incident_id === incidentId);
   }
 
-  function getSeverityColor(sev: string): string {
-    switch (sev) {
-      case 'critique': return 'var(--mantis-danger)';
-      case 'élevée': return '#e67e22';
-      case 'modérée': return 'var(--mantis-warn)';
-      default: return 'var(--mantis-text-muted)';
-    }
+  function severityTone(sev: string): 'danger' | 'warning' | 'neutral' {
+    return sev === 'critique' ? 'danger' : sev === 'élevée' || sev === 'modérée' ? 'warning' : 'neutral';
   }
 
   function getStatusLabel(status: string): string {
@@ -49,27 +49,28 @@
 
 <section class="wf-view">
   <GuideHeader
-    title="Incidents"
-    question="Qu’est-ce qui me demande un vrai suivi, et pourquoi ?"
-    intro="Un incident est une exposition assez importante pour être traitée. Lisez le contexte, puis lancez l’action recommandée."
+    title="Points à traiter"
+    question="Qu’est-ce qui mérite une attention particulière, et pourquoi ?"
+    intro="Un point à traiter regroupe une situation suffisamment importante pour être suivie. Lisez le contexte, puis choisissez l’action utile."
   />
+  <RemediationJourney current="incident" />
 
   {#if loading}
-    <div class="glass-card"><p class="muted">Chargement des incidents...</p></div>
+    <StatePanel tone="info" title="Chargement des points à traiter" message="Lecture du suivi local…" />
   {:else if error}
-    <div class="glass-card"><p class="error">Erreur: {error}</p></div>
+    <StatePanel tone="danger" title="Points à traiter indisponibles" message={error} />
   {:else if incidents.length === 0}
-    <div class="glass-card"><p class="muted">Aucun incident enregistré dans la base.</p></div>
+    <StatePanel tone="success" title="Aucune décision en attente" message="Une exposition vérifiée pourra être qualifiée ici si elle mérite un suivi." />
   {:else}
     <div class="split-layout">
       <!-- Liste des incidents -->
       <div class="glass-card list-panel">
-        <h2>À traiter</h2>
+        <div class="list-heading"><div><p class="eyebrow">Décider</p><h2>À traiter</h2></div><span>{incidents.length}</span></div>
         <ul class="item-list">
           {#each incidents as inc (inc.id)}
             <li>
               <a class="list-item" class:active={selectedId === inc.id} href={`/incidents?id=${inc.id}`}>
-                <span class="badge" style={`color: ${getSeverityColor(inc.severity)}; border-color: ${getSeverityColor(inc.severity)};`}>{inc.severity}</span>
+                <StatusBadge label={inc.severity} tone={severityTone(inc.severity)} dot />
                 <span class="item-title">{inc.title}</span>
                 <p class="item-desc">Détecté le {new Date(inc.discovered_at).toLocaleDateString('fr-FR')}</p>
               </a>
@@ -83,10 +84,10 @@
         {#if selected}
           <div class="detail-header">
             <h3>{selected.title}</h3>
-            <span class="badge large" style={`color: ${getSeverityColor(selected.severity)}; border-color: ${getSeverityColor(selected.severity)};`}>{selected.severity}</span>
+            <StatusBadge label={selected.severity} tone={severityTone(selected.severity)} dot />
           </div>
           
-          <p class="summary">{selected.next_step}</p>
+          <div class="decision-callout"><span>Prochaine décision</span><strong>{selected.next_step}</strong></div>
           
           <div class="detail-grid">
             <div class="field">
@@ -109,7 +110,7 @@
 
           {#if getActionsForIncident(selected.id).length > 0}
             <div class="actions-section">
-              <h4>Actions requises</h4>
+              <h4>Actions liées</h4>
               <ul class="action-list">
                 {#each getActionsForIncident(selected.id) as action (action.id)}
                   <li>
@@ -123,7 +124,7 @@
             </div>
           {/if}
         {:else}
-          <p class="muted">Sélectionnez un incident dans la liste.</p>
+          <StatePanel compact title="Sélectionnez un point à traiter" message="Son contexte, son impact et les actions liées apparaîtront ici." />
         {/if}
       </div>
     </div>
@@ -131,8 +132,6 @@
 </section>
 
 <style>
-  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
-  .error { color: var(--mantis-danger); font-size: 0.85rem; }
 
   .split-layout {
     display: grid;
@@ -206,16 +205,6 @@
     margin: 0;
     font-size: 1.2rem;
     font-weight: 600;
-  }
-
-  .summary {
-    margin: 0 0 1.25rem;
-    padding: 0.75rem 1rem;
-    border-left: 3px solid var(--mantis-accent);
-    background: color-mix(in srgb, var(--mantis-accent) 5%, transparent);
-    border-radius: 0 6px 6px 0;
-    font-size: 0.9rem;
-    line-height: 1.5;
   }
 
   .detail-grid {
@@ -300,19 +289,4 @@
     color: var(--mantis-text-muted);
   }
 
-  .badge {
-    display: inline-block;
-    padding: 0.15rem 0.45rem;
-    border: 1px solid;
-    border-radius: 4px;
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    align-self: flex-start;
-  }
-
-  .badge.large {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.6rem;
-  }
 </style>

@@ -1,21 +1,33 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import { open } from '@tauri-apps/plugin-shell';
   import '$lib/workflow.css';
   import GuideHeader from '$lib/GuideHeader.svelte';
-  import { listRgpdRequests, updateRgpdRequestStatus, type RgpdRequest } from '$lib/api';
+  import StatePanel from '$lib/components/StatePanel.svelte';
+  import RemediationJourney from '$lib/components/RemediationJourney.svelte';
+  import { getRgpdReviewStatus, listRgpdRequests, listRgpdEvidence, addRgpdEvidence, listRgpdEvents, revokeRgpdDraftValidation, saveRgpdDraftRevision, updateRgpdRequestStatus, useValidatedRgpdDraft, validateRgpdDraft, type RgpdRequest, type RgpdReviewStatus, type RgpdEvidence, type RgpdEvent } from '$lib/api';
+  import { activeIdentityId } from '$lib/active-identity';
 
   let requests = $state<RgpdRequest[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
   let copied = $state(false);
+  let review = $state<RgpdReviewStatus|null>(null);
+  let reviewBusy = $state(false);
+  let reviewNotice = $state<string|null>(null);
+  let sourceChecked=$state(false),identityChecked=$state(false),recipientChecked=$state(false),contentChecked=$state(false),legalNoticeAccepted=$state(false);
+  let draftText=$state('');let draftSaving=$state(false);
+  let evidence=$state<RgpdEvidence[]>([]); let events=$state<RgpdEvent[]>([]);
+  let evidenceKind=$state('source'); let evidenceLocator=$state(''); let evidenceDescription=$state(''); let evidenceVerified=$state(false); let evidenceBusy=$state(false);
 
   // Local state for status updates (not persisted yet)
   let localStatuses = $state<Record<string, string>>({});
 
-  onMount(async () => {
+  async function refresh() {
+    loading = true;
     try {
-      const data = await listRgpdRequests();
+      const data = await listRgpdRequests($activeIdentityId);
       requests = data;
       // Initialize local statuses from fetched data
       localStatuses = data.reduce((acc, r) => {
@@ -27,10 +39,13 @@
     } finally {
       loading = false;
     }
-  });
+  }
+  onMount(() => activeIdentityId.subscribe(() => { void refresh(); }));
 
   const selectedId = $derived($page.url.searchParams.get('id') ?? requests[0]?.id ?? null);
   const selected = $derived(requests.find((r) => r.id === selectedId));
+
+  $effect(()=>{const id=selected?.id;if(id){review=null;reviewNotice=null;draftText=selected?.draft_preview??'';sourceChecked=identityChecked=recipientChecked=contentChecked=legalNoticeAccepted=false;Promise.all([getRgpdReviewStatus(id),listRgpdEvidence(id),listRgpdEvents(id)]).then(([status,proofs,history])=>{review=status;evidence=proofs;events=history;}).catch(e=>error=String(e));}});
 
   function getTypeLabel(typeId: string): string {
     switch (typeId) {
@@ -71,16 +86,32 @@
     }
   }
 
-  async function copyDraft(text: string) {
+  async function copyDraft() {
+    if(!selected)return;
     try {
-      await navigator.clipboard.writeText(text);
+      const authorized=await useValidatedRgpdDraft(selected.id,'copie');
+      await navigator.clipboard.writeText(authorized.text);
       copied = true;
       setTimeout(() => {
         copied = false;
       }, 2000);
-    } catch {
-      /* clipboard may be unavailable outside secure context */
+    } catch (e) {
+      error=`Copie impossible : ${String(e)}`;
     }
+  }
+
+  async function validateDraft(){if(!selected)return;reviewBusy=true;error=null;try{review=await validateRgpdDraft(selected.id,{sourceChecked,identityChecked,recipientChecked,contentChecked,legalNoticeAccepted});localStatuses={...localStatuses,[selected.id]:'status_002'};reviewNotice='Brouillon validé. La copie et l’export local sont maintenant autorisés.';}catch(e){error=String(e)}finally{reviewBusy=false}}
+  async function revokeValidation(){if(!selected)return;review=await revokeRgpdDraftValidation(selected.id);localStatuses={...localStatuses,[selected.id]:'status_001'};reviewNotice='Validation retirée. La copie et l’export sont de nouveau bloqués.';}
+  async function exportDraft(){if(!selected)return;try{const result=await useValidatedRgpdDraft(selected.id,'export_texte');reviewNotice=`Brouillon exporté localement : ${result.path}`;}catch(e){error=String(e)}}
+  async function saveDraft(){if(!selected)return;draftSaving=true;try{review=await saveRgpdDraftRevision(selected.id,draftText);requests=requests.map(r=>r.id===selected.id?{...r,draft_preview:draftText,status_id:'status_001'}:r);localStatuses={...localStatuses,[selected.id]:'status_001'};sourceChecked=identityChecked=recipientChecked=contentChecked=legalNoticeAccepted=false;reviewNotice='Nouvelle version enregistrée. Une nouvelle validation est nécessaire.';}catch(e){error=String(e)}finally{draftSaving=false}}
+
+  async function addEvidence(){if(!selected||!evidenceLocator.trim())return;evidenceBusy=true;try{const item=await addRgpdEvidence(selected.id,evidenceKind,evidenceLocator.trim(),evidenceDescription.trim()||null,evidenceVerified);evidence=[item,...evidence];evidenceLocator='';evidenceDescription='';evidenceVerified=false;events=await listRgpdEvents(selected.id);reviewNotice='Preuve ajoutée au suivi local.';}catch(e){error=String(e)}finally{evidenceBusy=false}}
+
+  async function openExternalUrl(event: MouseEvent, url: string) {
+    event.preventDefault();
+    if (!/^https?:\/\//i.test(url)) return;
+    try { await open(url); }
+    catch (e) { error = `Impossible d’ouvrir ce lien : ${String(e)}`; }
   }
 
   const currentStatus = $derived(selected ? localStatuses[selected.id] ?? selected.status_id : '');
@@ -88,22 +119,24 @@
 
 <section class="wf-view">
   <GuideHeader
-    title="DPO / RGPD"
-    question="Comment préparer ma demande de droits, sans me tromper ?"
-    intro="MANTIS prépare le texte et le suivi. Vous seul envoyez la demande (mail, formulaire ou courrier)."
+    title="Demandes RGPD"
+    question="Comment préparer une demande claire, sans rien envoyer par erreur ?"
+    intro="MANTIS vous aide à préparer et suivre votre demande. Vous la relisez, l’adaptez et l’envoyez vous-même."
   />
+  <RemediationJourney current="rgpd" />
 
   {#if loading}
-    <div class="glass-card"><p class="muted">Chargement des demandes...</p></div>
-  {:else if error}
-    <div class="glass-card"><p class="error">Erreur: {error}</p></div>
+    <StatePanel tone="info" title="Préparation des demandes" message="Lecture des brouillons et validations locales…" />
+  {:else if error && requests.length === 0}
+    <StatePanel tone="danger" title="Demandes indisponibles" message={error} />
   {:else if requests.length === 0}
-    <div class="glass-card"><p class="muted">Aucune demande RGPD enregistrée.</p></div>
+    <StatePanel title="Aucune demande préparée" message="Une démarche RGPD pourra être créée après vérification d’une source et décision explicite de votre part." />
   {:else}
+    {#if error}<p class="error action-error" role="alert">{error}</p>{/if}
     <div class="split-layout">
       <!-- Liste des demandes -->
       <div class="glass-card list-panel">
-        <h2>Démarches</h2>
+        <div class="list-heading"><div><p class="eyebrow">Demander</p><h2>Mes demandes</h2></div><span>{requests.length}</span></div>
         <ul class="item-list">
           {#each requests as req (req.id)}
             <li>
@@ -128,9 +161,13 @@
             <h3>{getTypeLabel(selected.type_id)} — {selected.target}</h3>
           </div>
           
-          <p class="summary">
-            Étapes : vérifier la cible → copier le brouillon → envoyer vous-même → noter l’envoi ici.
-          </p>
+          <div class="decision-callout"><span>Processus manuel</span><strong>Vérifier la cible → valider le brouillon → l’envoyer vous-même → noter le résultat</strong><small>MANTIS ne transmet jamais la demande à votre place.</small></div>
+
+          <a class="rgpd-guide-link" href="/guides?id=guide-rgpd">
+            <span aria-hidden="true">§</span>
+            <div><small>Avant l’envoi · guide pratique</small><strong>Choisir le bon droit et conserver la preuve</strong><p>Accès, rectification, effacement, opposition : vérifiez la démarche adaptée et les éléments à garder.</p></div>
+            <b>Ouvrir →</b>
+          </a>
           
           <div class="detail-grid">
             <div class="field">
@@ -138,7 +175,7 @@
               <dd>{selected.target}</dd>
             </div>
             <div class="field">
-              <dt>Contact DPO / privacy</dt>
+              <dt>Contact publié</dt>
               <dd>{selected.dpo_contact}</dd>
             </div>
             <div class="field">
@@ -147,23 +184,46 @@
             </div>
           </div>
 
-          <div class="actions-section">
-            <h4>Aperçu du brouillon</h4>
-            <pre class="draft-preview">{selected.draft_preview}</pre>
-          </div>
+          {#if selected.source_url}
+            <div class="source-panel">
+              <span>Page concernée</span>
+              <a href={selected.source_url} onclick={(event) => openExternalUrl(event, selected.source_url!)}>{selected.source_url}</a>
+              <p>Vérifiez que la page est toujours accessible et qu’elle contient bien vos données avant d’envoyer une demande.</p>
+              {#if selected.contact_source_url}<p>Le contact affiché a été trouvé sur cette page publique ; vérifiez-le avant utilisation.</p>{/if}
+            </div>
+          {/if}
 
           <div class="actions-section">
-            <h4>Actions</h4>
+            <h4>Aperçu du brouillon</h4>
+            <textarea class="draft-preview" bind:value={draftText} disabled={review?.validated} aria-label="Texte du brouillon RGPD"></textarea>
+            <div class="draft-tools"><span>{draftText.length} caractères · enregistré localement uniquement</span>{#if !review?.validated}<button class="wf-btn" disabled={draftSaving||draftText.trim()===selected.draft_preview.trim()} onclick={saveDraft}>{draftSaving?'Enregistrement…':'Enregistrer une nouvelle version'}</button>{/if}</div>
+          </div>
+
+          <div class="review-panel">
+            <div><h4>Relecture obligatoire</h4><span class:valid={review?.validated}>{review?.validated?'Validé par vous':review?.eligible?'À vérifier avant utilisation':'Non éligible'}</span></div>
+            <p>{review?.reason ?? 'Vérification de la provenance…'}</p>
+            {#if review?.eligible && !review.validated}<fieldset disabled={reviewBusy}><label><input type="checkbox" bind:checked={sourceChecked}/> J’ai ouvert la source et vérifié que la page existe encore.</label><label><input type="checkbox" bind:checked={identityChecked}/> J’ai vérifié que les données semblent bien me concerner.</label><label><input type="checkbox" bind:checked={recipientChecked}/> J’ai vérifié l’organisation et le contact destinataire.</label><label><input type="checkbox" bind:checked={contentChecked}/> J’ai relu et adapté le texte, les faits et les informations entre crochets.</label><label><input type="checkbox" bind:checked={legalNoticeAccepted}/> Je comprends que MANTIS fournit un brouillon informatif, pas un conseil juridique.</label></fieldset><button class="wf-btn primary" disabled={reviewBusy||!(sourceChecked&&identityChecked&&recipientChecked&&contentChecked&&legalNoticeAccepted)} onclick={validateDraft}>{reviewBusy?'Validation…':'Valider ce brouillon'}</button>{/if}
+            {#if review?.validated}<p class="validated">Version {review.contract_version} validée le {review.reviewed_at}.</p><button class="wf-btn" onclick={revokeValidation}>Modifier / retirer ma validation</button>{/if}
+          </div>
+          <div class="actions-section">
+            <h4>Preuves et suivi de la demande</h4>
+            <p class="muted">Ajoutez uniquement des références utiles : URL, note de vérification ou preuve d’envoi/réponse. Aucun secret.</p>
+            {#if evidence.length}<ul class="evidence-list">{#each evidence as item}<li><strong>{item.kind}</strong> · {item.locator}{#if item.verified}<span class="verified">Vérifiée</span>{/if}{#if item.description}<small>{item.description}</small>{/if}</li>{/each}</ul>{:else}<p class="muted">Aucune preuve complémentaire enregistrée.</p>{/if}
+            <div class="evidence-grid"><label>Type<select bind:value={evidenceKind}><option value="source">Source</option><option value="identity">Identité vérifiée</option><option value="recipient">Destinataire</option><option value="content">Contenu relu</option><option value="send">Envoi manuel</option><option value="response">Réponse du site</option></select></label><label>Référence<input bind:value={evidenceLocator} maxlength="2048" placeholder="URL, note ou chemin local contrôlé" /></label></div>
+            <label>Description<textarea bind:value={evidenceDescription} rows="2" placeholder="Ce que cette preuve démontre"></textarea></label><label class="checkline"><input type="checkbox" bind:checked={evidenceVerified}/> J’ai vérifié cette référence</label><button class="wf-btn" disabled={evidenceBusy||!evidenceLocator.trim()} onclick={addEvidence}>{evidenceBusy?'Ajout…':'Ajouter la preuve'}</button>
+            {#if events.length}<details class="secondary-section"><summary>Historique de la demande <span>{events.length}</span></summary><ul class="event-list">{#each events as event}<li>{event.event_type} · {new Date(event.created_at).toLocaleString('fr-FR')}{#if event.note} — {event.note}{/if}</li>{/each}</ul></details>{/if}
+          </div>
+          {#if reviewNotice}<p class="notice" role="status">{reviewNotice}</p>{/if}
+
+          <div class="actions-section">
+            <h4>Utiliser le brouillon validé</h4>
             <div class="action-buttons">
-              <button class="wf-btn" onclick={() => copyDraft(selected.draft_preview)}>
+              <button class="wf-btn" disabled={!review?.validated} onclick={copyDraft}>
                 {copied ? 'Copié !' : 'Copier le brouillon'}
               </button>
+              <button class="wf-btn" disabled={!review?.validated} onclick={exportDraft}>Exporter en texte</button>
               
-              {#if currentStatus === 'status_001'}
-                <button class="wf-btn primary" onclick={() => setStatus(selected.id, 'status_002')}>
-                  Marquer prête à envoyer
-                </button>
-              {:else if currentStatus === 'status_002'}
+              {#if currentStatus === 'status_002' && review?.validated}
                 <button class="wf-btn primary" onclick={() => setStatus(selected.id, 'status_003')}>
                   J'ai envoyé
                 </button>
@@ -174,11 +234,11 @@
               {/if}
             </div>
             <p class="muted" style="margin-top: 0.75rem;">
-              Aucun envoi automatique. Aucun secret stocké. Le changement de statut est persisté localement.
+              Aucun envoi automatique et aucun bouton d’envoi. La copie, l’export et chaque validation sont tracés localement.
             </p>
           </div>
         {:else}
-          <p class="muted">Sélectionnez une démarche.</p>
+          <StatePanel compact title="Sélectionnez une démarche" message="Son destinataire, ses preuves et son brouillon apparaîtront ici." />
         {/if}
       </div>
     </div>
@@ -188,6 +248,18 @@
 <style>
   .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
   .error { color: var(--mantis-danger); font-size: 0.85rem; }
+  .evidence-grid { display:grid; grid-template-columns: 1fr 2fr; gap:.75rem; }
+  label { display:grid; gap:.3rem; color:var(--mantis-text-muted); font-size:.78rem; margin:.45rem 0; }
+  select,input,textarea { width:100%; box-sizing:border-box; border:1px solid var(--mantis-border); border-radius:6px; background:rgba(0,0,0,.18); color:var(--mantis-text); padding:.5rem; font:inherit; }
+  textarea { resize:vertical; }
+  .checkline { display:flex; align-items:center; gap:.45rem; }
+  .checkline input { width:auto; }
+  .evidence-list,.event-list { list-style:none; padding:0; display:grid; gap:.4rem; }
+  .evidence-list li,.event-list li { padding:.55rem; border:1px solid var(--mantis-border); border-radius:6px; font-size:.8rem; overflow-wrap:anywhere; }
+  .evidence-list small { display:block; color:var(--mantis-text-muted); margin-top:.2rem; }
+  .verified { color:var(--mantis-ok); margin-left:.5rem; font-size:.72rem; }
+  .event-list li { color:var(--mantis-text-muted); }
+  @media(max-width:700px){.evidence-grid{grid-template-columns:1fr;}}
 
   .split-layout {
     display: grid;
@@ -266,16 +338,6 @@
     font-weight: 600;
   }
 
-  .summary {
-    margin: 0 0 1.25rem;
-    padding: 0.75rem 1rem;
-    border-left: 3px solid var(--mantis-accent);
-    background: color-mix(in srgb, var(--mantis-accent) 5%, transparent);
-    border-radius: 0 6px 6px 0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
   .detail-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -306,6 +368,11 @@
     color: var(--mantis-text);
   }
 
+  .source-panel { margin-top: 1.25rem; padding: 0.9rem 1rem; border: 1px solid var(--mantis-accent); border-radius: 8px; background: color-mix(in srgb, var(--mantis-accent) 7%, transparent); }
+  .source-panel span { display: block; margin-bottom: 0.3rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mantis-text-muted); }
+  .source-panel a { display: block; overflow-wrap: anywhere; color: var(--mantis-accent); font-size: 0.88rem; }
+  .source-panel p { margin: 0.6rem 0 0; color: var(--mantis-text-muted); font-size: 0.8rem; }
+
   .actions-section {
     margin-top: 1.5rem;
     padding-top: 1rem;
@@ -330,7 +397,15 @@
     line-height: 1.5;
     max-height: 300px;
     overflow-y: auto;
+    width: 100%;
+    min-height: 300px;
+    color: var(--mantis-text);
+    resize: vertical;
   }
+  .draft-tools{display:flex;justify-content:space-between;align-items:center;gap:.7rem;margin-top:.55rem}.draft-tools span{font-size:.72rem;color:var(--mantis-text-muted)}
+  .review-panel{margin-top:1rem;padding:1rem;border:1px solid var(--mantis-warn);border-radius:8px;background:color-mix(in srgb,var(--mantis-warn) 7%,transparent)}
+  .review-panel>div{display:flex;justify-content:space-between;gap:1rem}.review-panel h4{margin:0}.review-panel span{font-size:.7rem;color:var(--mantis-warn)}.review-panel span.valid,.validated{color:var(--mantis-ok)}
+  .review-panel p{font-size:.8rem;color:var(--mantis-text-muted)}.review-panel fieldset{display:grid;gap:.55rem;border:0;padding:.5rem 0 1rem}.review-panel label{display:flex;gap:.55rem;align-items:flex-start;font-size:.82rem}.review-panel input{margin-top:.15rem}.notice{padding:.7rem;border:1px solid var(--mantis-accent);border-radius:6px;color:var(--mantis-accent);overflow-wrap:anywhere}
 
   .action-buttons {
     display: flex;
@@ -348,4 +423,5 @@
     text-transform: uppercase;
     align-self: flex-start;
   }
+  .rgpd-guide-link{display:grid;grid-template-columns:42px 1fr auto;gap:.8rem;align-items:center;margin:1rem 0;padding:.8rem;border:1px solid color-mix(in srgb,#d6b36a 48%,var(--mantis-border));border-radius:10px;color:inherit;text-decoration:none;background:linear-gradient(110deg,rgba(214,179,106,.1),rgba(255,255,255,.015))}.rgpd-guide-link:hover{border-color:#d6b36a}.rgpd-guide-link>span{display:grid;place-items:center;width:42px;height:42px;border-radius:9px;background:rgba(214,179,106,.12);color:#d6b36a;font:600 1.35rem/1 Georgia,serif}.rgpd-guide-link div{display:grid;gap:.16rem}.rgpd-guide-link small{color:#d6b36a;font:700 .61rem/1 var(--font-meta);letter-spacing:.08em;text-transform:uppercase}.rgpd-guide-link strong{font-size:.83rem}.rgpd-guide-link p{margin:0;color:var(--mantis-text-muted);font-size:.71rem;line-height:1.4}.rgpd-guide-link b{color:#d6b36a;font-size:.72rem;white-space:nowrap}
 </style>

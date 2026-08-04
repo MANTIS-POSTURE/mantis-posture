@@ -7,6 +7,7 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
+/dist
 
 # OS
 .DS_Store
@@ -22,3 +23,61 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .aider*
+.codex/
+.codex-*
+
+# Local tooling, logs and development databases
+/.aider.tags.cache.v4/
+/vcpkg/
+/holehe.spec
+/ddgs-web.spec
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated, signed-off runtime bundle. Never commit binaries, logs or scan output.
+/src-tauri/resources/holehe/*
+!/src-tauri/resources/holehe/.gitkeep
+/src-tauri/resources/ddgs/*
+!/src-tauri/resources/ddgs/.gitkeep
+/src-tauri/resources/user-scanner/*
+!/src-tauri/resources/user-scanner/.gitkeep
+/tools/holehe-sidecar/.build/
+/tools/holehe-sidecar/wheels/
+/tools/holehe-sidecar/.venv/
+/tools/ddgs-sidecar/.build/
+/tools/ddgs-sidecar/wheels/
+/tools/ddgs-sidecar/.venv/
+/tools/ddgs-sidecar/.build-ddgs*.log
+/tools/user-scanner-sidecar/.build/
+/tools/user-scanner-sidecar/upstream/
+/tools/user-scanner-sidecar/wheels/
+/tools/user-scanner-sidecar/.venv/
+/tools/maigret-sidecar/.build/
+/tools/maigret-sidecar/wheels/
+/tools/maigret-sidecar/.venv/
+/src-tauri/resources/maigret/*
+!/src-tauri/resources/maigret/.gitkeep
+/src-tauri/.mantis-dev-data/
+/.mantis-dev-data/
+
+# Local workspaces, temporary exports and private reports
+/path/
+/tmp/
+/reports/
+/scan-output/
+/raw/
+
+# Python and platform build caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Release outputs
+*.msi
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm

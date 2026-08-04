@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	interface Props {
 		label: string;
 		value: string;
@@ -14,11 +15,11 @@
 
 <div class="ro-field">
 	<div class="ro-top">
-		<span class="ro-label">{label}</span>
-		<span class="ro-badge" title={hint}>Lecture seule</span>
+		<span class="ro-label">{t(label)}</span>
+		<span class="ro-badge" title={t(hint)}> {t('Lecture seule')}</span>
 	</div>
-	<p class="ro-value">{value}</p>
-	<p class="ro-hint">{hint}</p>
+	<p class="ro-value">{t(value)}</p>
+	<p class="ro-hint">{t(hint)}</p>
 </div>
 
 <style>

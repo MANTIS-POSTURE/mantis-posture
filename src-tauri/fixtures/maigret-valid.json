@@ -1,0 +1,1 @@
+{"version":1,"collector_version":"maigret-0.6.3","target":"alice_42","results":[{"site_name":"Example Social","url":"https://social.example/alice_42","category":"social"},{"site_name":"Example Forum","url":"https://forum.example/u/alice_42","category":"forum"}],"summary":{"checked":150,"found":2}}

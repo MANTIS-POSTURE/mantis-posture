@@ -1,0 +1,13 @@
+{
+  "login": "MANTIS-user",
+  "html_url": "https://github.com/MANTIS-user",
+  "name": "Profil de démonstration",
+  "company": "MANTIS Test",
+  "location": "Paris",
+  "bio": "Profil public synthétique, uniquement destiné aux tests.",
+  "blog": "https://example.test",
+  "twitter_username": "mantis_test",
+  "public_repos": 12,
+  "followers": 8,
+  "created_at": "2020-01-02T03:04:05Z"
+}

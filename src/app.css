@@ -1,38 +1,240 @@
-/* MANTIS POSTURE — base visuelle "cockpit" (thème sombre graphite/ardoise).
-   Palette et principes alignés sur docs/mantis-product.md :
-   professionnel, sobre, orienté analyse, sans esthétique "hacker/cyberpunk". */
+/* MANTIS POSTURE — Privacy Intelligence Cockpit foundations.
+   --ui-* est la source de vérité ; --mantis-* reste compatible avec les vues existantes. */
 
 :root {
-	/* Fonds - Tons très sombres, gris charbon */
-	--mantis-bg: #08090c; /* quasi noir */
-	--mantis-bg-raised: rgba(20, 23, 28, 0.6); /* panneau glassmorphism */
-	--mantis-bg-solid: #14171c; /* fallback sans transparence */
-	--mantis-bg-sidebar: #0c0e12; /* colonne sidebar */
-	--mantis-border: rgba(255, 255, 255, 0.08); /* bordures discrètes lumineuses */
-	--mantis-border-strong: rgba(255, 255, 255, 0.15);
-
-	/* Texte */
-	--mantis-text: #e8eaed; /* texte principal */
-	--mantis-text-muted: #9aa0a6; /* métadonnées, sous-texte */
-
-	/* Accents d'état (alertes, statuts) - clairs et sobres */
-	--mantis-accent: #5b8def; /* accent neutre cockpit (bleu Proton/Palantir) */
-	--mantis-ok: #3fb96c; /* OK / positif */
-	--mantis-warn: #f5b400; /* attention */
-	--mantis-danger: #e5484d; /* critique */
-
-	/* Espacements */
+	--ui-canvas: #000000;
+	--ui-canvas-elevated: #010203;
+	--ui-sidebar: rgba(4, 8, 10, 0.46);
+	--ui-surface-1: rgba(5, 9, 11, 0.60);
+	--ui-surface-2: rgba(8, 13, 15, 0.72);
+	--ui-surface-3: rgba(13, 20, 22, 0.84);
+	--ui-glass-tint: rgba(4, 8, 10, 0.46);
+	--ui-glass-highlight: rgba(238, 255, 252, 0.13);
+	--ui-glass-shadow: rgba(0, 0, 0, 0.92);
+	--ui-surface-solid: #080d0f;
+	--ui-border-subtle: rgba(215, 238, 238, 0.10);
+	--ui-border-default: rgba(215, 238, 238, 0.17);
+	--ui-border-strong: rgba(215, 238, 238, 0.30);
+	--ui-highlight-inner: rgba(231, 250, 249, 0.10);
+	--ui-text-primary: #f3f8f7;
+	--ui-text-secondary: #c1cecc;
+	--ui-text-tertiary: #899895;
+	--ui-text-disabled: #686868;
+	--ui-text-inverse: #041011;
+	--ui-accent: #c7ced1;
+	--ui-accent-hover: #f3f6f7;
+	--ui-accent-soft: rgba(199, 206, 209, 0.13);
+	--ui-link: #c7d0d4;
+	--ui-link-hover: #f4f7f8;
+	--ui-link-soft: rgba(199, 208, 212, 0.11);
+	--ui-focus-ring: rgba(221, 229, 232, 0.42);
+	--ui-ai: #aeb6ba;
+	--ui-ai-soft: rgba(174, 182, 186, 0.15);
+	--ui-success: #78d9a6;
+	--ui-warning: #df7373;
+	--ui-danger: #f27878;
+	--ui-info: #aeb7bb;
+	--ui-review: var(--ui-danger);
+	--ui-critical: var(--ui-danger);
+	--ui-ambient-one: rgba(91, 235, 226, 0.085);
+	--ui-ambient-two: rgba(92, 78, 190, 0.045);
+	--ui-ambient-three: rgba(124, 231, 224, 0.028);
+	--ui-material-shell: rgba(4, 8, 10, 0.46);
+	--ui-material-overlay: rgba(7, 13, 15, 0.58);
+	--ui-material-panel: rgba(6, 11, 13, 0.66);
+	--ui-material-solid: #080d0f;
+	--ui-rim-light: rgba(238, 255, 252, 0.18);
+	--ui-rim-shadow: rgba(0, 0, 0, 0.86);
+	--ui-refraction-cyan: rgba(219, 230, 233, 0.26);
+	--ui-refraction-ice: rgba(241, 246, 247, 0.22);
+	--ui-specular: rgba(255, 255, 255, 0.20);
+	--font-display: 'Segoe UI Variable Display', 'Aptos Display', 'Segoe UI', system-ui, sans-serif;
+	--font-body: 'Segoe UI Variable Text', 'Aptos', 'Segoe UI', system-ui, sans-serif;
+	--font-meta: 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 1.5rem;
+	--space-7: 1.75rem;
+	--space-8: 2rem;
 	--space-xs: 0.5rem;
 	--space-sm: 0.75rem;
 	--space-md: 1.25rem;
 	--space-lg: 1.75rem;
 
-	/* Rayons */
 	--radius-sm: 6px;
-	--radius-md: 10px;
-	--radius-lg: 14px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 14px;
+	--radius-pill: 999px;
+	--shadow-1: 0 18px 44px rgba(0, 0, 0, 0.58), 0 1px 0 rgba(238, 255, 252, 0.06);
+	--shadow-2: 0 30px 84px rgba(0, 0, 0, 0.76), 0 1px 0 rgba(238, 255, 252, 0.08);
+	--shadow-overlay: 0 34px 100px rgba(0, 0, 0, 0.88);
+	--shadow-glow-accent: 0 0 28px rgba(220, 228, 231, 0.13);
+	--blur-panel: 26px;
+	--blur-overlay: 34px;
+	--duration-fast: 120ms;
+	--duration-normal: 190ms;
+	--duration-slow: 280ms;
+	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
+	--ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--sidebar-width: 248px;
+	--titlebar-height: 40px;
+	--content-max: 1440px;
+	--content-gutter: clamp(1rem, 2vw, 2rem);
+
+	--mantis-bg: var(--ui-canvas);
+	--mantis-bg-raised: var(--ui-surface-1);
+	--mantis-bg-solid: var(--ui-surface-solid);
+	--mantis-bg-sidebar: var(--ui-sidebar);
+	--mantis-border: var(--ui-border-default);
+	--mantis-border-strong: var(--ui-border-strong);
+	--mantis-text: var(--ui-text-primary);
+	--mantis-text-muted: var(--ui-text-secondary);
+	--mantis-accent: var(--ui-accent);
+	--mantis-ok: var(--ui-success);
+	--mantis-warn: var(--ui-warning);
+	--mantis-danger: var(--ui-danger);
 
 	color-scheme: dark;
+}
+
+/* Neutral AMOLED surfaces: theme accents stay reserved for controls and status. */
+:root[data-theme='arctic'],
+:root[data-theme='ember'],
+:root[data-theme='verdant'],
+:root[data-theme='cyber'],
+:root[data-theme='cyberpunk'],
+:root[data-theme='osint'] {
+	--ui-canvas:#020303;
+	--ui-canvas-elevated:#070808;
+	--ui-sidebar:rgba(7,8,9,.89);
+	--ui-surface-1:rgba(11,13,14,.88);
+	--ui-surface-2:rgba(17,19,20,.90);
+	--ui-surface-3:rgba(25,27,28,.92);
+	--ui-glass-tint:rgba(8,10,11,.82);
+	--ui-border-subtle:rgba(255,255,255,.075);
+	--ui-border-default:rgba(255,255,255,.13);
+	--ui-border-strong:rgba(255,255,255,.23);
+	--ui-glass-highlight:rgba(255,255,255,.11);
+}
+
+/* AMOLED Black: true black canvas with brighter text and clearer surfaces. */
+:root[data-theme='obsidian'] {
+	--ui-canvas:#000000;
+	--ui-canvas-elevated:#010203;
+	--ui-sidebar:rgba(4,8,10,.46);
+	--ui-surface-1:rgba(5,9,11,.60);
+	--ui-surface-2:rgba(8,13,15,.72);
+	--ui-surface-3:rgba(13,20,22,.84);
+	--ui-glass-tint:rgba(4,8,10,.46);
+	--ui-glass-highlight:rgba(238,255,252,.13);
+	--ui-glass-shadow:rgba(0,0,0,.92);
+	--ui-surface-solid:#080d0f;
+	--ui-border-subtle:rgba(215,238,238,.10);
+	--ui-border-default:rgba(215,238,238,.17);
+	--ui-border-strong:rgba(215,238,238,.30);
+	--ui-highlight-inner:rgba(231,250,249,.10);
+	--ui-text-primary:#f3f8f7;
+	--ui-text-secondary:#c1cecc;
+	--ui-text-tertiary:#899895;
+	--ui-text-disabled:#687774;
+	--ui-text-inverse:#041011;
+	--ui-accent:#7be8e3;
+	--ui-accent-hover:#a9fffa;
+	--ui-accent-soft:rgba(123,232,227,.12);
+	--ui-link:#a9d8ff;
+	--ui-link-hover:#d7ecff;
+	--ui-link-soft:rgba(169,216,255,.10);
+	--ui-focus-ring:rgba(123,232,227,.38);
+	--ui-ai:#b9a9f2;
+	--ui-ai-soft:rgba(185,169,242,.16);
+	--ui-success:#78d9a6;
+	--ui-warning:#e6b46a;
+	--ui-danger:#f27878;
+	--ui-info:#8cb8e8;
+	--ui-review:var(--ui-warning);
+	--ui-critical:var(--ui-danger);
+	--ui-ambient-one:rgba(91,235,226,.085);
+	--ui-ambient-two:rgba(92,78,190,.045);
+	--ui-ambient-three:rgba(124,231,224,.028);
+	--ui-material-shell:rgba(4,8,10,.46);
+	--ui-material-overlay:rgba(7,13,15,.58);
+	--ui-material-panel:rgba(6,11,13,.66);
+	--ui-material-solid:#080d0f;
+	--ui-rim-light:rgba(238,255,252,.18);
+	--ui-rim-shadow:rgba(0,0,0,.86);
+	--ui-refraction-cyan:rgba(139,250,241,.28);
+	--ui-refraction-ice:rgba(215,244,255,.22);
+	--ui-specular:rgba(247,255,253,.20);
+}
+
+/* MANTIS signature light: silver only. Green and red remain semantic. */
+:root[data-theme] {
+	--ui-accent:#c7ced1;
+	--ui-accent-hover:#f3f6f7;
+	--ui-accent-soft:rgba(199,206,209,.13);
+	--ui-link:#c7d0d4;
+	--ui-link-hover:#f4f7f8;
+	--ui-link-soft:rgba(199,208,212,.11);
+	--ui-focus-ring:rgba(221,229,232,.42);
+	--ui-ai:#aeb6ba;
+	--ui-ai-soft:rgba(174,182,186,.15);
+	--ui-warning:#df7373;
+	--ui-info:#aeb7bb;
+	--ui-review:var(--ui-danger);
+	--ui-ambient-one:rgba(211,220,224,.052);
+	--ui-ambient-two:rgba(151,160,168,.026);
+	--ui-ambient-three:rgba(238,242,243,.018);
+	--ui-refraction-cyan:rgba(219,230,233,.26);
+	--ui-refraction-ice:rgba(241,246,247,.22);
+	--ui-specular:rgba(255,255,255,.20);
+	--shadow-glow-accent:0 0 28px rgba(220,228,231,.13);
+}
+
+/* AMOLED Black glass layer: transparent enough to reveal depth, restrained
+   enough to keep dense operational text crisp. */
+:root[data-theme='obsidian'] body::before {
+	opacity: .018;
+	mix-blend-mode: screen;
+}
+
+:root[data-theme='obsidian'] body::after {
+	background:
+		radial-gradient(ellipse at 12% 8%, rgba(211,220,224,.06), transparent 28%),
+		radial-gradient(ellipse at 88% 18%, rgba(151,160,168,.026), transparent 25%),
+		radial-gradient(ellipse at 62% 94%, rgba(238,242,243,.018), transparent 23%);
+	filter: blur(52px);
+}
+
+:root[data-theme='obsidian'] .app {
+	background: transparent;
+}
+
+:root[data-theme='obsidian'] .sidebar {
+	background: var(--ui-material-shell);
+	backdrop-filter: blur(var(--blur-panel)) saturate(118%);
+	-webkit-backdrop-filter: blur(var(--blur-panel)) saturate(118%);
+}
+
+:root[data-theme='obsidian'] .wf-panel,
+:root[data-theme='obsidian'] .glass-card {
+	background: var(--ui-material-panel);
+	border-color: var(--ui-border-default);
+	box-shadow:
+		inset 0 1px 0 var(--ui-rim-light),
+		inset 0 -1px 0 var(--ui-rim-shadow),
+		var(--shadow-1);
+}
+
+:root[data-theme='obsidian'] .wf-panel:hover,
+:root[data-theme='obsidian'] .glass-card:hover {
+	border-color: color-mix(in srgb, var(--ui-accent) 34%, var(--ui-border-strong));
+	box-shadow:
+		inset 0 1px 0 var(--ui-rim-light),
+		0 18px 44px rgba(0,0,0,.52);
 }
 
 * {
@@ -43,15 +245,153 @@ html,
 body {
 	margin: 0;
 	padding: 0;
-	background: var(--mantis-bg);
+	min-width: 320px;
+	min-height: 100%;
+	background: transparent;
 	color: var(--mantis-text);
-	/* Polices système modernes en priorité */
-	font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-	font-size: 14px;
+	font-family: var(--font-body);
+	font-size: 15px;
 	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
+
+:root[data-material-preview='true'] .app {
+	background: transparent;
+}
+
+:root[data-material-preview='true'] .sidebar {
+	background: rgba(5, 8, 10, .46);
+	backdrop-filter: blur(34px) saturate(145%);
+	-webkit-backdrop-filter: blur(34px) saturate(145%);
+	box-shadow: inset -1px 0 0 rgba(231,250,249,.08), 18px 0 48px rgba(0,0,0,.28);
+}
+
+:root[data-theme='arctic'] {
+	--ui-canvas:#071017; --ui-canvas-elevated:#0b1821; --ui-sidebar:rgba(8,20,29,.72); --ui-surface-1:rgba(15,33,44,.76); --ui-surface-2:rgba(20,43,57,.78); --ui-surface-3:rgba(28,55,70,.82); --ui-glass-tint:rgba(11,29,40,.68); --ui-accent:#69c9e8; --ui-accent-hover:#a8e2f6; --ui-accent-soft:rgba(105,201,232,.14); --ui-link:#a8d7ff; --ui-link-hover:#d4ecff; --ui-focus-ring:rgba(105,201,232,.42); --ui-ai:#a8b9ff; --ui-success:#79d7b3; --ui-warning:#efc36d; --ui-danger:#ed8383;
+}
+
+:root[data-theme='ember'] {
+	--ui-canvas:#120b09; --ui-canvas-elevated:#1b100d; --ui-sidebar:rgba(25,13,11,.73); --ui-surface-1:rgba(40,23,18,.76); --ui-surface-2:rgba(54,30,23,.78); --ui-surface-3:rgba(68,39,29,.82); --ui-glass-tint:rgba(35,19,16,.68); --ui-accent:#e29a62; --ui-accent-hover:#f2bb86; --ui-accent-soft:rgba(226,154,98,.14); --ui-link:#ef9a83; --ui-link-hover:#ffc0aa; --ui-focus-ring:rgba(226,154,98,.42); --ui-ai:#c9a2e8; --ui-success:#83cf9b; --ui-warning:#f0bd68; --ui-danger:#ef7f69;
+}
+
+:root[data-theme='verdant'] {
+	--ui-canvas:#07100e; --ui-canvas-elevated:#0c1a16; --ui-sidebar:rgba(8,20,17,.73); --ui-surface-1:rgba(14,35,29,.76); --ui-surface-2:rgba(20,47,39,.78); --ui-surface-3:rgba(29,61,50,.82); --ui-glass-tint:rgba(11,30,25,.68); --ui-accent:#75d6ad; --ui-accent-hover:#a4ebca; --ui-accent-soft:rgba(117,214,173,.14); --ui-link:#98e5c1; --ui-link-hover:#c7f6dc; --ui-focus-ring:rgba(117,214,173,.42); --ui-ai:#afa8ef; --ui-success:#86d8ae; --ui-warning:#e8bb71; --ui-danger:#e98383;
+}
+
+:root[data-theme='cyber'] {
+	--ui-canvas:#000; --ui-canvas-elevated:#030303; --ui-sidebar:rgba(4,4,5,.88); --ui-surface-1:rgba(13,14,15,.80); --ui-surface-2:rgba(19,20,21,.84); --ui-surface-3:rgba(28,29,30,.87); --ui-glass-tint:rgba(10,11,12,.76); --ui-border-subtle:rgba(255,255,255,.075); --ui-border-default:rgba(255,255,255,.13); --ui-border-strong:rgba(255,255,255,.23); --ui-glass-highlight:rgba(255,255,255,.11); --ui-accent:#61dff4; --ui-accent-hover:#a5f0fa; --ui-accent-soft:rgba(97,223,244,.09); --ui-link:#8ab2ff; --ui-link-hover:#c0d2ff; --ui-focus-ring:rgba(97,223,244,.32); --ui-ai:#b8b6dd; --ui-success:#81c8ab; --ui-warning:#d8b773; --ui-danger:#dc8495; --ui-ambient-one:rgba(97,223,244,.032); --ui-ambient-two:rgba(138,178,255,.022); --ui-ambient-three:rgba(255,255,255,.012);
+}
+
+:root[data-theme='cyberpunk'] {
+	--ui-canvas:#000; --ui-canvas-elevated:#030303; --ui-sidebar:rgba(5,4,5,.88); --ui-surface-1:rgba(15,13,15,.80); --ui-surface-2:rgba(22,19,22,.84); --ui-surface-3:rgba(32,28,32,.87); --ui-glass-tint:rgba(11,10,11,.76); --ui-border-subtle:rgba(255,255,255,.075); --ui-border-default:rgba(255,255,255,.13); --ui-border-strong:rgba(255,255,255,.23); --ui-glass-highlight:rgba(255,255,255,.11); --ui-accent:#ee68c7; --ui-accent-hover:#ffa8e3; --ui-accent-soft:rgba(238,104,199,.09); --ui-link:#e5bd7b; --ui-link-hover:#ffe1ac; --ui-focus-ring:rgba(238,104,199,.32); --ui-ai:#bbb3d4; --ui-success:#83c3a1; --ui-warning:#e5bd7b; --ui-danger:#de8298; --ui-ambient-one:rgba(238,104,199,.032); --ui-ambient-two:rgba(185,159,255,.022); --ui-ambient-three:rgba(255,255,255,.012);
+}
+
+:root[data-theme='osint'] {
+	--ui-canvas:#000; --ui-canvas-elevated:#030303; --ui-sidebar:rgba(4,5,4,.88); --ui-surface-1:rgba(12,14,12,.81); --ui-surface-2:rgba(18,21,18,.84); --ui-surface-3:rgba(27,31,27,.87); --ui-glass-tint:rgba(9,11,9,.76); --ui-border-subtle:rgba(255,255,255,.075); --ui-border-default:rgba(255,255,255,.13); --ui-border-strong:rgba(255,255,255,.23); --ui-glass-highlight:rgba(255,255,255,.11); --ui-accent:#72df9a; --ui-accent-hover:#b0f2c6; --ui-accent-soft:rgba(114,223,154,.09); --ui-link:#d9bc7c; --ui-link-hover:#f6dfad; --ui-focus-ring:rgba(114,223,154,.32); --ui-ai:#bab4d6; --ui-success:#82c8a0; --ui-warning:#d9bc7c; --ui-danger:#dc8585; --ui-ambient-one:rgba(114,223,154,.032); --ui-ambient-two:rgba(217,188,124,.02); --ui-ambient-three:rgba(255,255,255,.012);
+}
+
+/* Every alternate accent keeps the same deep obsidian material base. */
+:root[data-theme='arctic'],
+:root[data-theme='ember'],
+:root[data-theme='verdant'],
+:root[data-theme='cyber'],
+:root[data-theme='cyberpunk'],
+:root[data-theme='osint'] {
+	--ui-canvas:#000;
+	--ui-canvas-elevated:#010203;
+	--ui-sidebar:rgba(4,8,10,.46);
+	--ui-surface-1:rgba(5,9,11,.60);
+	--ui-surface-2:rgba(8,13,15,.72);
+	--ui-surface-3:rgba(13,20,22,.84);
+	--ui-glass-tint:rgba(4,8,10,.46);
+	--ui-material-shell:rgba(4,8,10,.46);
+	--ui-material-overlay:rgba(7,13,15,.58);
+	--ui-material-panel:rgba(6,11,13,.66);
+	--ui-material-solid:#080d0f;
+	--ui-rim-light:rgba(238,255,252,.18);
+	--ui-rim-shadow:rgba(0,0,0,.86);
+	--ui-refraction-cyan:rgba(139,250,241,.28);
+	--ui-refraction-ice:rgba(215,244,255,.22);
+	--ui-specular:rgba(247,255,253,.20);
+}
+
+body { overflow: hidden; }
+
+body::after {
+	content: '';
+	position: fixed;
+	z-index: -1;
+	inset: -25%;
+	pointer-events: none;
+	background:
+		radial-gradient(ellipse at 15% 17%, var(--ui-ambient-one), transparent 27%),
+		radial-gradient(ellipse at 83% 10%, var(--ui-ambient-two), transparent 26%),
+		radial-gradient(ellipse at 58% 88%, var(--ui-ambient-three), transparent 25%);
+	filter: blur(28px);
+	animation: none;
+}
+
+@keyframes canvas-orbit {
+	from { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+	to { transform: translate3d(2.5%, 1.5%, 0) scale(1.08); }
+}
+
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0.025;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+	mix-blend-mode: soft-light;
+}
+
+:root[data-theme='cyber'] body::before,
+:root[data-theme='cyberpunk'] body::before,
+:root[data-theme='osint'] body::before {
+	opacity: .16;
+	mix-blend-mode: screen;
+}
+
+:root[data-theme='cyber'] .wf-panel::after,
+:root[data-theme='cyber'] .glass-card::after,
+:root[data-theme='cyberpunk'] .wf-panel::after,
+:root[data-theme='cyberpunk'] .glass-card::after,
+:root[data-theme='osint'] .wf-panel::after,
+:root[data-theme='osint'] .glass-card::after {
+	background: radial-gradient(circle, color-mix(in srgb, var(--ui-accent) 13%, transparent), transparent 70%);
+	opacity: .22;
+}
+
+button, input, select, textarea { font: inherit; }
+
+h1, h2, h3, h4, h5, h6, .brand-name {
+	font-family: var(--font-display);
+	font-weight: 650;
+	letter-spacing: -0.018em;
+}
+
+h1 { letter-spacing: -0.04em; }
+
+:where(.eyebrow, .wf-meta, .nav-group h2, .brand-sub) {
+	font-family: var(--font-meta);
+	font-size: .67rem;
+	font-weight: 600;
+	letter-spacing: .1em;
+}
+
+:where(.tech-meta, .log, .evidence-ref) { font-family: var(--font-meta); }
+
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+:focus-visible {
+	outline: 2px solid var(--ui-link);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px var(--ui-focus-ring);
+}
+
+::selection { background: color-mix(in srgb, var(--ui-accent) 28%, transparent); color: var(--ui-text-primary); }
 
 /* Scrollbar styling for dark theme */
 ::-webkit-scrollbar {
@@ -64,10 +404,259 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: rgba(255, 255, 255, 0.1);
+	background: rgba(154, 171, 184, 0.18);
 	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: rgba(255, 255, 255, 0.2);
+	background: rgba(120, 169, 212, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		scroll-behavior: auto !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+	body::after { animation: none; }
+}
+
+/* Le CTA SCAN reste un repère d'action : sa boucle lente est volontairement
+   exemptée du limiteur global, tandis que les animations décoratives restent
+   réduites pour respecter le réglage système. */
+@media (prefers-reduced-motion: reduce) {
+	.scan-launcher,
+	.scan-launcher::before,
+	.scan-copy strong,
+	.scan-radar {
+		animation-duration: 8s !important;
+		animation-iteration-count: infinite !important;
+		transition-duration: .35s !important;
+	}
+}
+
+/* La progression d'un scan reste animée : elle informe d'un traitement réel
+   et n'est pas un effet décoratif. Les autres animations respectent le choix
+   système de réduction des mouvements. */
+@media (prefers-reduced-motion: reduce) {
+	.scan-progress,
+	.scan-progress *,
+	.scan-progress *::before,
+	.scan-progress *::after,
+	.premium-ai-gate,
+	.premium-ai-gate *,
+	.premium-ai-gate *::before,
+	.premium-ai-gate *::after {
+		animation-duration: var(--mantis-scan-motion, 2.4s) !important;
+		animation-iteration-count: infinite !important;
+		transition-duration: .35s !important;
+	}
+}
+
+/* Windows does not expose this preference consistently yet; keep the query
+   and the unsupported-backdrop fallback so the material remains readable. */
+@media (prefers-reduced-transparency: reduce) {
+	:root {
+		--ui-material-shell: var(--ui-surface-solid);
+		--ui-material-overlay: var(--ui-surface-3);
+		--ui-material-panel: var(--ui-surface-1);
+	}
+	body::before,
+	body::after { display: none; }
+	:root[data-theme='obsidian'] .sidebar,
+	:root[data-theme='obsidian'] .wf-panel,
+	:root[data-theme='obsidian'] .glass-card,
+	.ui-material-shell,
+	.ui-material-crystal,
+	.ui-material-deep,
+	.ai-onboarding { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+@supports not ((backdrop-filter: blur(1px))) {
+	:root {
+		--ui-material-shell: var(--ui-surface-solid);
+		--ui-material-overlay: var(--ui-surface-3);
+		--ui-material-panel: var(--ui-surface-1);
+	}
+}
+
+/* ===== Phase 5 quality guardrails ===== */
+
+@media (prefers-contrast: more) {
+	:root {
+		--ui-border-subtle: rgba(231, 250, 249, .24);
+		--ui-border-default: rgba(231, 250, 249, .38);
+		--ui-border-strong: rgba(231, 250, 249, .62);
+		--ui-text-secondary: #dce8e6;
+		--ui-text-tertiary: #b5c3c0;
+	}
+	:focus-visible { outline-width:3px; box-shadow:0 0 0 5px var(--ui-focus-ring); }
+}
+
+@media (forced-colors: active) {
+	*, *::before, *::after { box-shadow:none !important; background-image:none !important; }
+	:focus-visible { outline:2px solid CanvasText; outline-offset:3px; box-shadow:none; }
+	button, a, input, select, textarea { forced-color-adjust:auto; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+	.wf-view .wf-panel,
+	.wf-view .glass-card,
+	.wf-view .identity-command,
+	.wf-view .scan-progress,
+	.wf-view .results,
+	.wf-view .signal-card,
+	.wf-view .ai-view-banner,
+	.wf-view .premium-ai-gate,
+	.wf-view .catalog,
+	.wf-view .guide-detail,
+	.wf-view .resource-ribbon { background:var(--ui-surface-1) !important; background-image:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+}
+
+@media (max-width: 600px) {
+	.wf-view { padding:1.1rem .9rem 2rem; gap:1.1rem; }
+	.wf-header h1 { font-size:1.4rem; }
+	.wf-sub { font-size:.9rem; }
+	.wf-actions { gap:.45rem; }
+	.wf-actions .wf-btn { width:100%; }
+}
+
+/* ===== Dashboard grid global (utilisé par les pages secondaires) ===== */
+
+.dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1.25rem;
+	align-items: start;
+}
+
+.col-span-1 {
+	grid-column: span 1;
+}
+
+.col-span-2 {
+	grid-column: span 2;
+}
+
+.col-span-3 {
+	grid-column: span 3;
+}
+
+/* ===== Cockpit grid (Centre de posture uniquement) ===== */
+
+/*
+   Layout du cockpit : 3 colonnes avec proportions fixes.
+   - Colonne 1 (Score + Actions rapides) : 35%
+   - Colonne 2 (Résumé des alertes) : 40%
+   - Colonne 3 (Chronologie) : 25%
+
+   Largeur minimale : 1100px.
+   Au-dessus : les 3 colonnes restent côte à côte.
+   En dessous : pile verticale ordonnée (Score → Actions rapides → Alertes → Chronologie).
+*/
+
+.cockpit-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 35fr) minmax(0, 40fr) minmax(0, 25fr);
+	gap: 1rem;
+	align-items: start;
+	width: 100%;
+}
+
+/* La grille de détail ne contient que deux panneaux : elle utilise toute la largeur. */
+.cockpit-grid--detail {
+	grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+}
+
+.cockpit-column {
+	min-width: 0;
+	min-height: 0;
+}
+
+/* Colonnes dédiées du cockpit */
+.cockpit-col-left {
+	grid-column: span 1;
+}
+
+.cockpit-col-center {
+	grid-column: span 1;
+}
+
+.cockpit-col-right {
+	grid-column: span 1;
+}
+
+.cockpit-column--full {
+	grid-column: span 1;
+}
+
+/* En dessous de 1100px, pile verticale. */
+@media (max-width: 1100px) {
+	.cockpit-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.cockpit-col-left,
+	.cockpit-col-center,
+	.cockpit-col-right,
+	.cockpit-column--full {
+		grid-column: span 1;
+	}
+
+	.cockpit-grid--detail {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Les cartes doivent rester dans leur cellule sans débordement */
+.cockpit-grid > * {
+	min-width: 0;
+}
+
+/* ===== Responsive dashboard grid (pages secondaires) ===== */
+
+/* Grand écran (≥1201px) : 3 colonnes */
+@media (min-width: 1201px) {
+	.dashboard-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/* Écran moyen (900px–1200px) : 2 colonnes */
+@media (max-width: 1200px) {
+	.dashboard-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* Écran étroit (<900px) : 1 colonne, tout empilé */
+@media (max-width: 900px) {
+	.dashboard-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.col-span-1,
+	.col-span-2,
+	.col-span-3 {
+		grid-column: span 1;
+	}
+}
+
+/* Très petit écran (<600px) : espacement réduit */
+@media (max-width: 600px) {
+	.dashboard-grid {
+		gap: 0.75rem;
+	}
+}
+
+/* Les cartes doivent rester dans leur cellule sans débordement */
+.dashboard-grid > * {
+	min-width: 0;
+}
+
+/* The application canvas is black first. Transparency belongs to the glass
+   surfaces above it, never to the overall reading field. */
+:root[data-theme] .app {
+	background: #000 !important;
 }

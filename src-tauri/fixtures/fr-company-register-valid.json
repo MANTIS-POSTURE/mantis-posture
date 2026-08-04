@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "siren": "123456789",
+      "nom_complet": "MANTIS RECHERCHE",
+      "dirigeants": [
+        {"nom": "DUPONT", "prenoms": "Alice", "nom_complet": "Alice Dupont"}
+      ]
+    },
+    {
+      "siren": "987654321",
+      "nom_complet": "AUTRE ENTREPRISE",
+      "dirigeants": [
+        {"nom": "DURAND", "prenoms": "Alice", "nom_complet": "Alice Durand"}
+      ]
+    }
+  ]
+}

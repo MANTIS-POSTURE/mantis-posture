@@ -1,0 +1,24 @@
+{
+  "hash": "973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b",
+  "profile_url": "https://gravatar.com/mantis-example",
+  "avatar_url": "https://0.gravatar.com/avatar/973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b",
+  "display_name": "Mantis Example",
+  "location": "Paris",
+  "job_title": "Analyste",
+  "company": "Example",
+  "description": "Profil public synthétique pour les tests MANTIS.",
+  "verified_accounts": [
+    {
+      "service_type": "github",
+      "service_label": "GitHub",
+      "url": "https://github.com/mantis-example",
+      "is_hidden": false
+    }
+  ],
+  "links": [
+    {
+      "label": "Site personnel",
+      "url": "https://example.test"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "profile": {
+    "username": "mantis_example",
+    "about": "Profil public synthétique pour les tests MANTIS.",
+    "karma": 42,
+    "created_at": "2024-02-03T04:05:06.000Z"
+  },
+  "activity": {
+    "hits": [
+      {
+        "objectID": "123456",
+        "author": "mantis_example",
+        "title": "Publication publique synthétique",
+        "url": "https://example.test/public-post",
+        "created_at": "2026-01-02T03:04:05.000Z"
+      },
+      {
+        "objectID": "123457",
+        "author": "mantis_example",
+        "story_title": "Commentaire public synthétique",
+        "created_at": "2026-01-01T03:04:05.000Z"
+      }
+    ]
+  }
+}

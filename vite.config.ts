@@ -13,7 +13,7 @@ export default defineConfig({
 
 			// MANTIS est une app desktop Tauri : le frontend est buildé en assets
 			// statiques (adapter-static) et embarqué dans le binaire, sans serveur Node.
-			adapter: adapter()
+			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
 

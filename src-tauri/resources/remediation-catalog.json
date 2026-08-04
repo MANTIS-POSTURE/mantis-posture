@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "reviewed_at": "2026-08-01",
+  "source": "Documentation locale MANTIS — pratiques de réduction d’exposition, revue produit",
+  "recommendations": [
+    {
+      "id": "exposure-breach-account-review",
+      "title": "Revoir les comptes potentiellement concernés",
+      "exposure_kinds": ["fuite"],
+      "priority": "haute",
+      "why": "Une fuite peut exposer une adresse ou un identifiant réutilisé. Le signal ne prouve pas qu’un compte est encore actif.",
+      "steps": ["Lister hors MANTIS les services où cette valeur était utilisée.", "Changer les secrets des comptes encore actifs depuis le site concerné.", "Révoquer les sessions inconnues et activer une authentification multifacteur.", "Noter uniquement les services revus, jamais le secret."],
+      "proof_expected": "Note des services revus, capture du réglage MFA ou confirmation de revue sans secret.",
+      "expected_outcome": "Les comptes concernés sont revus et les accès encore actifs sont mieux protégés.",
+      "guide_id": "guide-mfa",
+      "execution_mode": "manuel"
+    },
+    {
+      "id": "exposure-public-profile-minimize",
+      "title": "Réduire les informations visibles sur le profil",
+      "exposure_kinds": ["profil_public"],
+      "priority": "haute",
+      "why": "Une information publique facilite la corrélation ou un hameçonnage ciblé, sans démontrer qu’une personne contrôle le profil.",
+      "steps": ["Ouvrir la vue publique du profil hors MANTIS.", "Masquer les e-mails, téléphones ou adresses non nécessaires.", "Vérifier les options de recherche et de récupération du compte.", "Recontrôler la vue publique après le délai annoncé par le site."],
+      "proof_expected": "URL du profil et capture ou note de la vue publique après modification.",
+      "expected_outcome": "Seules les informations nécessaires restent publiques.",
+      "guide_id": "guide-privacy-social",
+      "execution_mode": "manuel"
+    },
+    {
+      "id": "exposure-directory-removal",
+      "title": "Demander la réduction ou le retrait d’un annuaire",
+      "exposure_kinds": ["annuaire"],
+      "priority": "moderee",
+      "why": "Un annuaire peut rendre une coordonnée facilement exploitable. Le site et le périmètre doivent être vérifiés avant toute demande.",
+      "steps": ["Vérifier la page et les données réellement visibles.", "Chercher la procédure officielle de retrait ou de rectification du site.", "Préparer une demande factuelle avec l’URL et uniquement les preuves nécessaires.", "Suivre la réponse et recontrôler la page."],
+      "proof_expected": "URL source, copie de la demande ou preuve de retrait si le site l’a confirmé.",
+      "expected_outcome": "La donnée est retirée, corrigée ou une réponse du site est conservée.",
+      "guide_id": "guide-rgpd",
+      "execution_mode": "assiste"
+    },
+    {
+      "id": "exposure-web-mention-verify",
+      "title": "Vérifier et contextualiser la mention web",
+      "exposure_kinds": ["mention"],
+      "priority": "moderee",
+      "why": "Une mention trouvée par recherche peut être ambiguë ou concerner un homonyme. Elle doit être vérifiée avant toute action.",
+      "steps": ["Ouvrir la source et noter le contexte public exact.", "Comparer uniquement les éléments publics disponibles sans conclure à une identité.", "Classer le signal comme pertinent, incertain ou hors périmètre.", "Si nécessaire, demander une correction ou un retrait au site."],
+      "proof_expected": "URL, extrait contrôlé et note expliquant la décision de vérification.",
+      "expected_outcome": "Le signal est confirmé, écarté ou conservé comme incertain avec une raison.",
+      "guide_id": "guide-privacy-social",
+      "execution_mode": "manuel"
+    }
+  ]
+}

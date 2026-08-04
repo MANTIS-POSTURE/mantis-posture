@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { t } from '$lib/i18n';
 
 	interface Props {
 		/** Short label above the CTA, e.g. "Ensuite" */
@@ -16,7 +17,7 @@
 	}
 
 	let {
-		label = 'Ensuite',
+		label = t('Ensuite'),
 		hint,
 		primaryHref,
 		primaryLabel,
@@ -28,12 +29,12 @@
 
 <div class="next-bar">
 	<div class="next-copy">
-		<span class="next-label">{label}</span>
-		<p class="next-hint">{hint}</p>
+		<span class="next-label">{t(label)}</span>
+		<p class="next-hint">{t(hint)}</p>
 	</div>
 	<div class="next-ctas">
 		{#if primaryHref && primaryLabel}
-			<a class="wf-btn primary" href={primaryHref}>{primaryLabel}</a>
+			<a class="wf-btn primary" href={primaryHref}>{t(primaryLabel)}</a>
 		{:else if onPrimary && primaryLabel}
 			<button
 				type="button"
@@ -41,7 +42,7 @@
 				disabled={primaryDisabled}
 				onclick={onPrimary}
 			>
-				{primaryLabel}
+				{t(primaryLabel)}
 			</button>
 		{/if}
 		{#if children}
@@ -59,9 +60,9 @@
 		gap: 0.85rem;
 		margin-top: 1.1rem;
 		padding: 0.9rem 1rem;
-		border-radius: 8px;
+		border-radius: var(--radius-md);
 		border: 1px solid color-mix(in srgb, var(--mantis-accent) 35%, var(--mantis-border));
-		background: color-mix(in srgb, var(--mantis-accent) 8%, var(--mantis-bg));
+		background: linear-gradient(100deg, color-mix(in srgb, var(--ui-accent) 9%, var(--ui-surface-1)), var(--ui-surface-1));
 	}
 
 	.next-label {

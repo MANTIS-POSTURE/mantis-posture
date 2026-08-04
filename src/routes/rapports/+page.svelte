@@ -1,106 +1,46 @@
-﻿<script lang="ts">
-	import '$lib/workflow.css';
-	import GuideHeader from '$lib/GuideHeader.svelte';
-	import NextStepBar from '$lib/NextStepBar.svelte';
-	import { reportSnapshot } from '$lib/mock/posture';
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import '$lib/workflow.css';
+  import GuideHeader from '$lib/GuideHeader.svelte';
+  import NextStepBar from '$lib/NextStepBar.svelte';
+  import { createExposureFromOsintSignal, createIncidentAndActionFromOsintSignal, exportOsintReport, generateOsintReport, type OsintReportSnapshot } from '$lib/api';
+	import { activeIdentityId } from '$lib/active-identity';
+	import StatePanel from '$lib/components/StatePanel.svelte';
+  import PageToolbar from '$lib/components/PageToolbar.svelte';
+  import SegmentedControl from '$lib/components/SegmentedControl.svelte';
+  import StatusBadge from '$lib/components/StatusBadge.svelte';
+  import { getGuide } from '$lib/guides';
+  import { t } from '$lib/i18n';
+  let report=$state<OsintReportSnapshot|null>(null);let loading=$state(true);let error=$state<string|null>(null);let mode=$state<'simple'|'advanced'>('simple');let notice=$state<string|null>(null);let busySignal=$state<string|null>(null);let exporting=$state<string|null>(null);
+  onMount(() => activeIdentityId.subscribe(() => { void refresh(); }));
+  async function refresh(){loading=true;error=null;try{report=await generateOsintReport($activeIdentityId);}catch(e){error=String(e)}finally{loading=false}}
+  async function exportReport(format:'markdown'|'pdf'){if(!report)return;exporting=format;notice=null;try{const result=await exportOsintReport(report.id,format);notice=`Export ${format==='pdf'?'PDF':'Markdown'} créé localement : ${result.path}`;}catch(e){error=String(e)}finally{exporting=null}}
+  async function createPlan(signalId:string){busySignal=signalId;try{await createExposureFromOsintSignal(signalId);const actionId=await createIncidentAndActionFromOsintSignal(signalId);notice='L’exposition, l’incident et leur action ont été ajoutés au suivi existant.';await refresh();location.href=`/actions?id=${actionId}`;}catch(e){error=String(e)}finally{busySignal=null}}
+  function canAct(status:string){return status==='Confirmé'||status==='Suivi'}
+  const reportViews=[{value:'simple',label:'À retenir'},{value:'advanced',label:'Détails et preuves'}];
 </script>
-
 <section class="wf-view">
-	<GuideHeader
-		title="Rapports"
-		question="Puis-je résumer ma posture clairement ?"
-		intro="Aperçu d’une synthèse locale. L’export HTML/PDF arrivera plus tard ; pour l’instant, lisez et repartez agir."
-	/>
-
-	<div class="wf-panel">
-		<h2>{reportSnapshot.title}</h2>
-		<p class="wf-meta">Généré le {reportSnapshot.generatedAt}</p>
-
-		<div class="stats">
-			<div class="stat">
-				<span class="stat-value">{reportSnapshot.score}</span>
-				<span class="stat-label">Score</span>
-			</div>
-			<div class="stat">
-				<span class="stat-value">{reportSnapshot.openIncidents}</span>
-				<span class="stat-label">Incidents</span>
-			</div>
-			<div class="stat">
-				<span class="stat-value">{reportSnapshot.openActions}</span>
-				<span class="stat-label">Actions ouvertes</span>
-			</div>
-			<div class="stat">
-				<span class="stat-value">{reportSnapshot.rgpdInProgress}</span>
-				<span class="stat-label">Démarches RGPD</span>
-			</div>
-		</div>
-
-		<div class="wf-field" style="margin-top:1.25rem">
-			<dt>Points clés</dt>
-			<ul class="highlights">
-				{#each reportSnapshot.highlights as h (h)}
-					<li>{h}</li>
-				{/each}
-			</ul>
-		</div>
-		<p class="wf-note">{reportSnapshot.note}</p>
-	</div>
-
-	<NextStepBar
-		hint="Un rapport sert à comprendre ; le Centre sert à décider. Continuez par la priorité n°1."
-		primaryHref="/posture"
-		primaryLabel="Traiter les priorités"
-	>
-		<a class="wf-btn" href="/incidents">Voir les incidents</a>
-		<a class="wf-btn" href="/dpo">Voir le DPO</a>
-	</NextStepBar>
+  <GuideHeader title="Mon bilan" question="Qu’est-ce qui mérite mon attention, et que puis-je faire maintenant ?" intro="Ce bilan rassemble les éléments retenus, vos décisions et les actions utiles pour l’identité affichée. Il n’affirme rien sans preuve." />
+  {#if loading}<StatePanel tone="info" title="Préparation de votre bilan" message="Organisation des éléments importants, des décisions et des prochaines étapes…" />{:else if error&&!report}<StatePanel tone="danger" title="Bilan indisponible" message={error} />{:else if report}
+    <PageToolbar label="Affichage et export du bilan"><SegmentedControl options={reportViews} value={mode} label="Niveau de détail" onChange={(value)=>mode=value as typeof mode}/><div class="report-actions"><button class="wf-btn" onclick={refresh}>Mettre à jour</button><button class="wf-btn" disabled={Boolean(exporting)} onclick={()=>exportReport('markdown')}>{exporting==='markdown'?'Préparation…':'Exporter en texte'}</button><button class="wf-btn primary" disabled={Boolean(exporting)} onclick={()=>exportReport('pdf')}>{exporting==='pdf'?'Préparation…':'Télécharger en PDF'}</button></div></PageToolbar>
+    {#if notice}<StatePanel compact tone="success" title="Bilan mis à jour" message={notice} live="polite" />{/if}{#if error}<StatePanel compact tone="danger" title="Action indisponible" message={error} live="assertive" />{/if}
+    <div class="hero"><div class="hero-meta"><span>Bilan préparé le {report.created_at}</span><StatusBadge label={report.has_local_ai_analysis?'Organisation assistée par IA locale':'Lecture déterministe'} tone={report.has_local_ai_analysis?'ai':'neutral'} dot /></div><h2>{t(report.overview)}</h2><p>{t(report.has_local_ai_analysis?'L’IA locale aide à organiser cette lecture, sans remplacer les preuves.':'Ce bilan reste disponible même sans IA locale.')}</p></div>
+    <div class="stats"><article><strong>{report.analyzed_count}</strong><span>analysés</span></article><article><strong>{report.discarded_count}</strong><span>écartés/contestés</span></article><article class="attention"><strong>{report.attention_count}</strong><span>à examiner</span></article><article><strong>{report.actions_now_count}</strong><span>actions urgentes</span></article></div>
+    {#if mode==='simple'}
+      <div class="questions">
+        <article><h3>Qu’est-ce qui est important ?</h3>{#if report.priorities.length}<ul>{#each report.priorities as item}<li><strong>{item.title}</strong><span>{item.source} · {item.severity} · {item.review_status}</span><p>{item.explanation}</p>{#if canAct(item.review_status)}<button class="wf-btn primary" disabled={busySignal===item.signal_id} onclick={()=>createPlan(item.signal_id)}>{busySignal===item.signal_id?'Création…':'Ajouter au plan d’action'}</button>{:else}<a class="wf-btn" href="/veille">Vérifier avant d’agir</a>{/if}</li>{/each}</ul>{:else}<p>Aucune exposition élevée n’est actuellement retenue.</p>{/if}</article>
+        <article><h3>Qu’est-ce qui semble me concerner ?</h3><p>{t(`${report.sources.filter(s=>s.review_status==='Confirmé'||s.review_status==='Suivi').length} résultat(s) confirmé(s) ou suivi(s). Les autres restent explicitement incertains.`)}</p></article>
+        <article><h3>Qu’est-ce qui est probablement sans importance ?</h3><p>{t(`${report.discarded_count} résultat(s) ignoré(s) ou contesté(s). Ils restent auditables dans le mode avancé.`)}</p></article>
+        <article><h3>Que dois-je faire maintenant ?</h3><p>{t(`${report.actions_now_count} action(s) haute(s) ou critique(s) sont ouvertes.`)}</p><a class="wf-btn primary" href="/actions">Ouvrir mon plan</a></article>
+        <article><h3>Qu’est-ce qui reste incertain ?</h3><p>{report.uncertain_count} résultat(s) à vérifier et {report.contradiction_count} contradiction(s).</p><a class="wf-btn" href="/graphe">Voir preuves et contradictions</a></article>
+      </div>
+      {#if report.guide_ids.length}<div class="wf-panel"><h2>Guides recommandés dans ce contexte</h2><div class="guides">{#each report.guide_ids as id}{@const guide = getGuide(id)}{#if guide}<a href={`/guides?id=${id}`} style={`--report-guide:${guide.accent}`}><img src={guide.image} alt="" /><span><small>{guide.category} · {guide.minutes} min</small><strong>{guide.shortTitle}</strong><em>{guide.summary}</em></span><b>→</b></a>{/if}{/each}</div></div>{/if}
+    {:else}
+      <div class="advanced-grid"><div class="wf-panel"><h2>Sources et observations ({report.sources.length})</h2><ul class="audit-list">{#each report.sources as item}<li><div><strong>{item.title}</strong><span>{item.observed_at} · {item.source} · {item.review_status}</span></div>{#if item.source_url}<a href={item.source_url} target="_blank" rel="noreferrer">Source</a>{/if}<p>{item.explanation}</p></li>{/each}</ul></div><div><div class="wf-panel"><h2>Décisions humaines</h2>{#if report.decisions.length}<ul class="compact">{#each report.decisions as decision}<li><b>{decision.decision}</b> · {decision.created_at}{#if decision.reason}<p>{decision.reason}</p>{/if}</li>{/each}</ul>{:else}<p class="muted">Aucune décision.</p>{/if}</div><div class="wf-panel"><h2>Limites</h2><ul class="compact">{#each report.limitations as limit}<li>{limit}</li>{/each}</ul></div><div class="wf-panel"><h2>Traçabilité</h2><p class="muted">Snapshot <code>{report.id}</code>. Les compteurs sont calculés en Rust et les exports sont générés depuis ce contenu figé.</p></div></div></div>
+    {/if}
+    <NextStepBar hint="Le rapport explique ; Actions permet de suivre concrètement la réduction du risque." primaryHref="/actions" primaryLabel="Ouvrir le plan d’action"><a class="wf-btn" href="/graphe">Explorer le graphe</a></NextStepBar>
+  {/if}
 </section>
-
 <style>
-	.stats {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 0.75rem;
-		margin-top: 1.25rem;
-	}
-
-	@media (max-width: 700px) {
-		.stats {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-
-	.stat {
-		padding: 0.9rem;
-		border-radius: 8px;
-		border: 1px solid var(--mantis-border);
-		background: var(--mantis-bg);
-		text-align: center;
-	}
-
-	.stat-value {
-		display: block;
-		font-size: 1.6rem;
-		font-weight: 750;
-		line-height: 1.1;
-	}
-
-	.stat-label {
-		display: block;
-		margin-top: 0.35rem;
-		font-size: 0.7rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--mantis-text-muted);
-	}
-
-	.highlights {
-		margin: 0.35rem 0 0;
-		padding-left: 1.1rem;
-		font-size: 0.88rem;
-		color: var(--mantis-text-muted);
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-	}
+  .report-actions{display:flex;flex-wrap:wrap;gap:.45rem}.report-actions .wf-btn{margin:0}.hero{padding:1.2rem;border:1px solid var(--ui-border-default);border-radius:var(--radius-md);background:var(--ui-surface-1)}.hero-meta{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.hero-meta>span,.hero p,.muted{color:var(--ui-text-secondary);font-size:.8rem}.hero h2{max-width:850px;margin:.85rem 0 .45rem;font-size:1.2rem}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem}.stats article{display:grid;text-align:center;padding:.9rem;border:1px solid var(--ui-border-default);border-radius:var(--radius-sm);background:var(--ui-surface-1)}.stats strong{font-size:1.7rem}.stats span{font-size:.7rem;text-transform:uppercase;color:var(--ui-text-tertiary)}.stats .attention{border-color:color-mix(in srgb,var(--ui-warning) 50%,var(--ui-border-default));box-shadow:inset 0 2px 0 var(--ui-warning)}.questions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}.questions>article{padding:1rem;border:1px solid var(--ui-border-default);border-radius:var(--radius-sm);background:var(--ui-surface-1)}.questions>article:first-child{grid-column:1/-1}.questions h3{font-size:.9rem}.questions ul,.audit-list,.compact{list-style:none;padding:0;display:grid;gap:.6rem}.questions li{padding:.7rem;border-left:3px solid var(--ui-warning);background:var(--ui-surface-2)}.questions li span,.questions li p{display:block;color:var(--ui-text-secondary);font-size:.78rem}.guides{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}.guides a{display:grid;grid-template-columns:58px 1fr auto;gap:.7rem;align-items:center;padding:.55rem;border:1px solid var(--ui-border-default);border-radius:var(--radius-sm);text-decoration:none;color:var(--ui-text-primary);background:linear-gradient(110deg,color-mix(in srgb,var(--report-guide) 8%,transparent),transparent)}.guides a:hover{border-color:var(--report-guide)}.guides img{width:58px;height:58px;border-radius:7px;object-fit:cover;background:#080a0c}.guides a>span{display:grid;gap:.14rem;min-width:0}.guides small{color:var(--report-guide);font:700 .58rem/1 var(--font-meta);text-transform:uppercase}.guides strong{font-size:.78rem}.guides em{display:-webkit-box;overflow:hidden;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:var(--ui-text-secondary);font-size:.68rem;font-style:normal;line-height:1.35}.guides b{color:var(--report-guide)}.advanced-grid{display:grid;grid-template-columns:2fr 1fr;gap:.8rem}.audit-list{max-height:680px;overflow:auto}.audit-list li{padding:.7rem;border:1px solid var(--ui-border-default);border-radius:var(--radius-sm);background:var(--ui-surface-2)}.audit-list li div{display:flex;justify-content:space-between;gap:.5rem}.audit-list span,.audit-list p{font-size:.75rem;color:var(--ui-text-secondary)}.compact li{padding:.5rem;border-bottom:1px solid var(--ui-border-default);font-size:.8rem}code{overflow-wrap:anywhere}@media(max-width:800px){.stats,.questions,.guides,.advanced-grid{grid-template-columns:1fr}.questions>article:first-child{grid-column:auto}.hero-meta{align-items:flex-start;flex-direction:column}}
 </style>

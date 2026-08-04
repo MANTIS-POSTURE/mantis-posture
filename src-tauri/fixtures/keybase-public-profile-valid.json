@@ -1,0 +1,42 @@
+{
+  "status": { "code": 0, "name": "OK" },
+  "them": [
+    {
+      "id": "0123456789abcdef0123456789abcdef",
+      "basics": {
+        "username": "mantis_example",
+        "ctime": 1700000000,
+        "mtime": 1700000100
+      },
+      "profile": {
+        "full_name": "Mantis Example",
+        "location": "Paris",
+        "bio": "Profil synthétique destiné aux tests MANTIS."
+      },
+      "proofs_summary": {
+        "all": [
+          {
+            "proof_type": "github",
+            "nametag": "mantis-example",
+            "state": 1,
+            "service_url": "https://github.com/mantis-example"
+          },
+          {
+            "proof_type": "reddit",
+            "nametag": "mantis_example",
+            "state": 1,
+            "human_url": "https://www.reddit.com/user/mantis_example"
+          },
+          {
+            "proof_type": "twitter",
+            "nametag": "hidden-example",
+            "state": 0,
+            "service_url": "https://x.com/hidden-example"
+          }
+        ]
+      }
+    }
+  ],
+  "csrf_token": "synthetic-token-that-must-never-be-persisted",
+  "session": "synthetic-session-that-must-never-be-persisted"
+}

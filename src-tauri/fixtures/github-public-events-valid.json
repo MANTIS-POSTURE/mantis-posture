@@ -1,0 +1,23 @@
+[
+  {
+    "public": true,
+    "type": "PushEvent",
+    "actor": { "login": "MANTIS-user" },
+    "repo": { "name": "MANTIS-user/signal-dashboard" },
+    "created_at": "2026-07-30T12:00:00Z"
+  },
+  {
+    "public": true,
+    "type": "CreateEvent",
+    "actor": { "login": "MANTIS-user" },
+    "repo": { "name": "MANTIS-user/privacy-notes" },
+    "created_at": "2026-06-20T08:15:00Z"
+  },
+  {
+    "public": false,
+    "type": "WatchEvent",
+    "actor": { "login": "MANTIS-user" },
+    "repo": { "name": "MANTIS-user/private" },
+    "created_at": "2026-06-19T08:15:00Z"
+  }
+]

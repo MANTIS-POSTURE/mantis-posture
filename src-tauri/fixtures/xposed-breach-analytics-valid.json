@@ -1,0 +1,22 @@
+{
+  "ExposedBreaches": {
+    "breaches_details": [
+      {
+        "breach": "ExampleService",
+        "details": "Incident synthétique utilisé uniquement pour les tests MANTIS",
+        "domain": "example.test",
+        "password_risk": "plaintext",
+        "references": "https://example.test/security-notice",
+        "verified": "Yes",
+        "xposed_data": "Email addresses;Passwords;Names",
+        "xposed_date": "2025-04-12",
+        "xposed_records": 1250
+      },
+      {
+        "breach": "ExampleService",
+        "verified": "Yes",
+        "xposed_data": "Email addresses"
+      }
+    ]
+  }
+}

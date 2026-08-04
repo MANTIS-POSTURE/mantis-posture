@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS exposures (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     kind TEXT NOT NULL CHECK(kind IN ('profil_public', 'fuite', 'annuaire', 'mention')),
-    severity TEXT NOT NULL CHECK(severity IN ('faible', 'modérée', 'élevée', 'critique')),
+    severity TEXT NOT NULL CHECK(severity IN ('faible', 'moderee', 'elevee', 'critique')),
     status TEXT NOT NULL CHECK(status IN ('nouvelle', 'en_suivi', 'acceptee', 'reduite')),
     discovered_at TEXT NOT NULL,
     source TEXT NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS incident_categories (
 CREATE TABLE IF NOT EXISTS incidents (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    severity TEXT NOT NULL CHECK(severity IN ('faible', 'modérée', 'élevée', 'critique')),
+    severity TEXT NOT NULL CHECK(severity IN ('faible', 'moderee', 'elevee', 'critique')),
     discovered_at TEXT NOT NULL,
     what TEXT NOT NULL,
     why TEXT NOT NULL,
@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS rgpd_requests (
     status_id TEXT NOT NULL REFERENCES rgpd_statuses(id),
     data_summary TEXT NOT NULL,
     draft_preview TEXT NOT NULL,
+    source_url TEXT,
+    contact_source_url TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -187,3 +189,11 @@ CREATE INDEX IF NOT EXISTS idx_exposures_folder ON exposures(folder_id);
 CREATE INDEX IF NOT EXISTS idx_incidents_folder ON incidents(folder_id);
 CREATE INDEX IF NOT EXISTS idx_actions_folder ON actions(folder_id);
 CREATE INDEX IF NOT EXISTS idx_rgpd_requests ON rgpd_requests(status_id);
+
+-- Catalogue initial OSINT -- DONNEES DE REFERENCE, PAS DE TEST
+INSERT OR IGNORE INTO osint_modules (id, name, description, target_kind, frequency, status, last_run, next_run, script_path, script_args) VALUES
+('osint-email-intel', 'XposedOrNot (fuites)', 'Verifie les fuites connues associees a un e-mail autorise. Les resultats restent a confirmer.', 'email', 'Manuel', 'actif', NULL, NULL, NULL, NULL),
+('osint-email-platforms', 'User Scanner (comptes)', 'Recherche des comptes potentiels associes a un e-mail ou pseudo autorise. Les resultats restent a verifier.', 'e-mail ou pseudo', 'Hebdomadaire', 'planifie', NULL, NULL, NULL, NULL),
+('osint-web-footprint', 'Empreinte Web (DDGS)', 'Recherche des mentions publiques d''un nom, pseudo ou e-mail autorise. Resultats indicatifs, a verifier avant toute action.', 'nom, pseudo ou e-mail', 'Manuel', 'planifie', NULL, NULL, NULL, NULL),
+('osint-username-profiles', 'Profils publics (Maigret)', 'Recherche des profils publics potentiels associes a un pseudo autorise. Chaque correspondance doit etre verifiee.', 'pseudo', 'Hebdomadaire', 'planifie', NULL, NULL, NULL, NULL),
+('osint-gmail-profile', 'GHunt (profil Google)', 'Prevu pour une configuration Google explicite. Pas encore executable.', 'email', 'Manuel', 'desactive', NULL, NULL, NULL, NULL);

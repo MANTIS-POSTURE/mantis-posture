@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Audit tracked release content
+        shell: pwsh
+        run: .\scripts\audit-release.ps1
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
+      - run: npm run check
+      - run: npm run build
+      # This action uses the ref itself to select the Rust channel; @stable is
+      # intentional and is monitored manually because a commit pin would no
+      # longer select the stable toolchain.
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Verify Rust formatting
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - name: Verify locked Rust metadata
+        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 --no-deps
+      - run: cargo check --manifest-path src-tauri/Cargo.toml --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+
+  windows-bundle:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci --ignore-scripts
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
+      - name: Build bundled collectors
+        shell: pwsh
+        run: .\scripts\build-sidecars.ps1 -BuildPython python
+      - name: Verify bundled collectors
+        shell: pwsh
+        run: .\scripts\verify-release-resources.ps1
+      - name: Build NSIS installer
+        run: npm run tauri build -- --bundles nsis
+      - name: Generate installer checksums
+        shell: pwsh
+        run: Get-ChildItem src-tauri\target\release\bundle\nsis\*.exe | Get-FileHash -Algorithm SHA256 | ConvertTo-Csv -NoTypeInformation | Set-Content installer-sha256.csv
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mantis-windows-installer
+          retention-days: 7
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            installer-sha256.csv

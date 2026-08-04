@@ -1,10 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listExposures, type Exposure } from '$lib/api';
+	import StatePanel from './StatePanel.svelte';
+  import { t } from '$lib/i18n';
 
   let exposures = $state<Exposure[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  const visibleExposures = $derived(exposures.slice(0, 3));
 
   onMount(async () => {
     try {
@@ -17,13 +20,13 @@
   });
 
   function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    return new Date(dateStr).toLocaleDateString(document.documentElement.lang === 'en' ? 'en-US' : 'fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
   function getSeverityColor(sev: string): string {
     switch (sev) {
       case 'critique': return 'var(--mantis-danger)';
-      case 'élevée': return '#e67e22';
+      case 'élevée': return 'var(--ui-danger)';
       case 'modérée': return 'var(--mantis-warn)';
       default: return 'var(--mantis-text-muted)';
     }
@@ -31,22 +34,22 @@
 </script>
 
 <div class="glass-card">
-  <h2>Expositions</h2>
+  <div class="list-heading"><div><p class="eyebrow">{t('Observations retenues')}</p><h2>{t('Expositions')}</h2></div>{#if exposures.length}<span>{exposures.length}</span>{/if}</div>
   
   {#if loading}
-    <p class="muted">Chargement...</p>
+    <StatePanel compact tone="info" title={t('Chargement des expositions')} />
   {:else if error}
-    <p class="error">Erreur: {error}</p>
+    <StatePanel compact tone="danger" title={t('Expositions indisponibles')} message={error} />
   {:else if exposures.length === 0}
-    <p class="muted">Aucune exposition enregistrée.</p>
+    <StatePanel compact tone="success" title={t('Aucune exposition enregistrée')} />
   {:else}
     <div class="list">
-      {#each exposures as exposure (exposure.id)}
+      {#each visibleExposures as exposure (exposure.id)}
         <a class="item" href={`/expositions?id=${exposure.id}`}>
           <div class="item-header">
             <div>
-              <h3>{exposure.title}</h3>
-              <p class="date">Détecté le {formatDate(exposure.discovered_at)}</p>
+              <h3>{t(exposure.title)}</h3>
+              <p class="date">{t('Détecté le')} {formatDate(exposure.discovered_at)}</p>
             </div>
             <span class="badge" style={`color: ${getSeverityColor(exposure.severity)}; border-color: ${getSeverityColor(exposure.severity)};`}>
               {exposure.severity}
@@ -56,18 +59,17 @@
         </a>
       {/each}
     </div>
+	<a class="list-footer" href="/expositions">{t('Voir toutes les expositions →')}</a>
   {/if}
 </div>
 
 <style>
-  .muted { color: var(--mantis-text-muted); font-size: 0.85rem; }
-  .error { color: var(--mantis-danger); font-size: 0.85rem; }
-
   .list {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
+	.list-heading { display:flex; align-items:start; justify-content:space-between; gap:1rem; margin-bottom:.85rem; }.list-heading h2 { margin:.2rem 0 0; }.list-heading .eyebrow { margin:0; color:var(--ui-warning); text-transform:uppercase; }.list-heading>span { display:grid; place-items:center; min-width:28px; height:28px; border:1px solid var(--ui-border-default); border-radius:var(--radius-pill); color:var(--ui-text-secondary); font-family:var(--font-meta); font-size:.72rem; }.list-footer { display:inline-block; margin-top:.85rem; color:var(--ui-link); font-size:.78rem; font-weight:620; text-decoration:none; }
 
   .item {
     display: block;

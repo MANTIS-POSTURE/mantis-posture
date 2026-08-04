@@ -164,14 +164,14 @@ export const identities: Identity[] = [
 		id: 'id-name',
 		label: 'Nom complet',
 		kind: 'nom',
-		value: 'Alex Martin',
+		value: 'MANTIS Demo User',
 		folderId: 'folder-perso'
 	},
 	{
 		id: 'id-email-perso',
 		label: 'E-mail personnel',
 		kind: 'email',
-		value: 'alex.martin.perso@example.com',
+		value: 'demo.user@example.test',
 		folderId: 'folder-perso',
 		notes: 'Utilisé pour comptes grand public'
 	},
@@ -179,7 +179,7 @@ export const identities: Identity[] = [
 		id: 'id-phone',
 		label: 'Téléphone mobile',
 		kind: 'telephone',
-		value: '+33 6 ·· ·· ·· 42',
+		value: '+00 0 ·· ·· ·· 00',
 		folderId: 'folder-perso',
 		notes: 'Affichage partiel — pas de secret'
 	},
@@ -187,14 +187,14 @@ export const identities: Identity[] = [
 		id: 'id-email-pro',
 		label: 'E-mail professionnel',
 		kind: 'email',
-		value: 'a.martin@entreprise-exemple.example',
+		value: 'demo.work@example.test',
 		folderId: 'folder-job'
 	},
 	{
 		id: 'id-linkedin',
 		label: 'Profil LinkedIn',
 		kind: 'url',
-		value: 'https://www.linkedin.com/in/exemple-alex-martin',
+		value: 'https://example.test/profile/demo-user',
 		folderId: 'folder-job'
 	}
 ];

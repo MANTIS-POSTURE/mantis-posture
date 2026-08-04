@@ -1,0 +1,16 @@
+{
+  "did": "did:plc:syntheticmantisprofile",
+  "handle": "mantis-example.bsky.social",
+  "displayName": "Profil MANTIS synthétique",
+  "description": "Fixture publique synthétique pour vérifier le parseur MANTIS.",
+  "website": "https://example.test/mantis",
+  "createdAt": "2025-01-02T03:04:05.000Z",
+  "followersCount": 12,
+  "followsCount": 8,
+  "postsCount": 4,
+  "verification": {
+    "verifications": [],
+    "verifiedStatus": "none",
+    "trustedVerifierStatus": "none"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "contract_version": "effacement-source-confirmee-v1",
+  "generation": "deterministic-template",
+  "requires": [
+    "confirmed_or_followed_osint_signal",
+    "https_source_url",
+    "existing_exposure_and_incident",
+    "explicit_five_point_human_review"
+  ],
+  "forbids": [
+    "automatic_send",
+    "automatic_recipient_guess",
+    "legal_advice_claim",
+    "facts_not_present_in_source",
+    "copy_or_export_before_validation"
+  ],
+  "allowed_uses": ["copy_after_validation", "local_text_export_after_validation"]
+}
