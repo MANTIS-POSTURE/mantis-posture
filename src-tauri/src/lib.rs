@@ -13320,8 +13320,9 @@ pub fn run() {
         .setup(|app| {
             // Set the native window icon explicitly so `tauri dev` uses the
             // same logo as packaged builds and the taskbar entry.
-            let window_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/128x128.png"))
-                .map_err(|error| format!("Unable to load application icon: {error}"))?;
+            let window_icon =
+                tauri::image::Image::from_bytes(include_bytes!("../icons/128x128.png"))
+                    .map_err(|error| format!("Unable to load application icon: {error}"))?;
             if let Some(window) = app.get_webview_window("main") {
                 window
                     .set_icon(window_icon)
