@@ -13,7 +13,10 @@ concurrency:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    # MANTIS is a Windows-only Tauri application. Running Rust checks on
+    # Ubuntu pulls in the Linux GTK/WebKit stack and requires system packages
+    # such as gobject-2.0, which are irrelevant to the supported target.
+    runs-on: windows-latest
     timeout-minutes: 20
     permissions:
       contents: read
