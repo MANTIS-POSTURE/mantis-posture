@@ -8,7 +8,6 @@ repository.
 ## Non-negotiable rules
 
 - Never commit a password, token, cookie, SQLite database, personal data, real scan, raw evidence, log, export, binary or secret.
-- Preserve the `Dossier → Identité → Exposition → Incident → Action` model and the separation between declared data, observations and decisions.
 - Do not add a collector, AI or automation that creates a business object without consent and human review.
 - Document the trust boundary and limitations of every new network request, Tauri command, migration or dependency.
 - Use synthetic fixtures and fictional URLs in tests.
@@ -35,9 +34,4 @@ cargo test --manifest-path src-tauri/Cargo.toml
 Pull requests must state which commands were actually run, migration changes,
 release impact and known limitations. Screenshots must use synthetic data only.
 
-## Maintenance style
 
-The project prefers “evidence before promise”: precise sentences, visible
-provenance and explicit limitations. A cultural reference may appear in a
-fixture or non-functional note, never in a security name, command, migration or
-error message.
