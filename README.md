@@ -4,7 +4,7 @@
 
 # MANTIS POSTURE
 
-> ### A learning/experiment project
+> ### Track your public online footprint
 >
 > I am not a professional software developer, an OSINT specialist, or have any experience in software devllopement.
 >
