@@ -43,7 +43,7 @@
 <br>
 
 > [!WARNING]
-> **The local AI features dot work at this stage.**
+> **The local AI features do not work at this stage.**
 
 ## See. Verify. Decide.
 
