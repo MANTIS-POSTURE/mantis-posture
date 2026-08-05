@@ -1,0 +1,4 @@
+# Signed local-AI catalogues must keep their exact byte representation across
+# Windows and Unix checkouts. The signature covers catalog.json byte-for-byte.
+/src-tauri/resources/local-ai-catalog/catalog.json text eol=lf
+/src-tauri/resources/local-ai-catalog/catalog.sig text eol=lf
