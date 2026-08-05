@@ -42,6 +42,8 @@
 
 <br>
 
+
+
 > [!WARNING]
 > **The local AI features do not work at this stage.**
 
