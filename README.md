@@ -4,11 +4,11 @@
 
 # MANTIS POSTURE
 
-> ### A small personal project
+> ### A learning/experiment project
 >
-> I am not a professional software developer, an OSINT specialist, or a security company.
+> I am not a professional software developer, an OSINT specialist, or have any experience in software devllopement.
 >
-> MANTIS POSTURE started as a personal learning project: a way for me to experiment with local software, public-data research, privacy concepts, and safer ways to review a digital footprint.
+> MANTIS POSTURE started as a personal learning project: a way for me to experiment with LLMs, UI disign, public-data research, privacy concepts, and safer ways to review a digital footprint.
 >
 > I am sharing it because I had fun building it and thought it might be interesting to have some feedback on it.
 
@@ -41,6 +41,9 @@
 </div>
 
 <br>
+
+> [!WARNING]
+> **The local AI features dot work at this stage.**
 
 ## See. Verify. Decide.
 
@@ -108,8 +111,6 @@ Enter → Scan → Review → Decide → Act
 <br>
 
 # Capabilities
-
-## Public monitoring, not surveillance
 
 MANTIS queries public sources compatible with the identifiers you provide and are authorized to analyze.
 
@@ -337,7 +338,7 @@ mantis-posture_0.1.0_x64-setup.exe
 **SHA-256**
 
 ```text
-To be completed with the checksum published alongside the final artifact.
+CBE397E2F395D62FE72AC8D5E2DDCCC0B72C73195D4F1EFBD33544A918DA83D7  MANTIS Posture_0.1.0_x64-setup.exe
 ```
 
 > [!IMPORTANT]
