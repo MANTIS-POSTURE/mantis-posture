@@ -1,5 +1,11 @@
 # Security policy
 
+The latest Windows build is scanned with VirusTotal:
+
+[![VirusTotal Scan](https://img.shields.io/badge/VirusTotal-Scan-blue?style=flat-square)](https://www.virustotal.com/gui/file/cbe397e2f395d62fe72ac8d5e2ddccc0b72c73195d4f1efbd33544a918da83d7/summary)
+
+[View full report →](https://www.virustotal.com/gui/file/cbe397e2f395d62fe72ac8d5e2ddccc0b72c73195d4f1efbd33544a918da83d7/summary)
+
 ## Scope
 
 This policy covers the repository code, build scripts and MANTIS POSTURE release
