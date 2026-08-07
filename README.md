@@ -342,6 +342,14 @@ mantis-posture_0.1.0_x64-setup.exe
 ```text
 CBE397E2F395D62FE72AC8D5E2DDCCC0B72C73195D4F1EFBD33544A918DA83D7  MANTIS Posture_0.1.0_x64-setup.exe
 ```
+## Security
+
+The latest Windows build is scanned with VirusTotal:
+
+[![VirusTotal Scan](https://img.shields.io/badge/VirusTotal-Scan-blue?style=flat-square)](https://www.virustotal.com/gui/file/cbe397e2f395d62fe72ac8d5e2ddccc0b72c73195d4f1efbd33544a918da83d7/summary)
+
+[View full report →](https://www.virustotal.com/gui/file/cbe397e2f395d62fe72ac8d5e2ddccc0b72c73195d4f1efbd33544a918da83d7/summary)
+
 
 > [!IMPORTANT]
 > This version is intended for people who want to test MANTIS POSTURE and contribute to its validation. Treat every result with care: human review remains the product’s central feature.
